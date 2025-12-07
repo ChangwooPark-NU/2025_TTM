@@ -17,20 +17,25 @@ module q_projection_tb();
         logic Wq_MEM_WEN;
         logic Wq_MEM_CEB;
         logic [9:0] Wq_MEM_ADDR;
-        //logic [127:0] OUTPUT_MEM_DOUT;
-        //logic OUTPUT_MEM_WEN;
-        //logic OUTPUT_MEM_CEB;
-        //logic [6:0] OUTPUT_MEM_ADDR;
+        logic [127:0] OUTPUT_MEM_DOUT;
+        logic OUTPUT_MEM_WEN;
+        logic OUTPUT_MEM_CEB;
+        logic [6:0] OUTPUT_MEM_ADDR;
 	logic [127:0] INPUT_MEM_DIN; 
 	logic [127:0] Wq_MEM_DIN; 
- 	//logic [127:0] OUTPUT_MEM_DIN; 	
+ 	logic [127:0] OUTPUT_MEM_DIN; 	
 	logic [4:0] init_input_addr;
   	logic [9:0] init_w_addr;
   	logic init_input_wen, init_w_wen; 
  	logic init;  
+	logic fin; 
+	logic [6:0] fin_output_addr; 
+	logic fin_output_wen; 
 	logic done; 	
 	logic [511:0] out; 
 	logic valid; 
+	logic [31:0] fp32_d; 
+	logic [511:0] fp32_q; 
 	
 	// Instantiate DUT 
 	Q_Projection dut ( 
@@ -46,14 +51,13 @@ module q_projection_tb();
 		.Wq_MEM_DOUT(Wq_MEM_DOUT), 
 		.Wq_MEM_WEN(Wq_MEM_WEN), 
 		.Wq_MEM_CEB(Wq_MEM_CEB), 
-		.Wq_MEM_ADDR(Wq_MEM_ADDR) 
-		//.OUTPUT_MEM_DOUT(OUTPUT_MEM_DOUT), 
-		//.OUTPUT_MEM_WEN(OUTPUT_MEM_WEN), 
-		//.OUTPUT_MEM_CEB(OUTPUT_MEM_CEB), 
-		//.OUTPUT_MEM_ADDR(OUTPUT_MEM_ADDR),
-		//.OUTPUT_MEM_DIN(OUTPUT_MEM_DIN)
+		.Wq_MEM_ADDR(Wq_MEM_ADDR), 
+		.OUTPUT_MEM_DOUT(OUTPUT_MEM_DOUT), 
+		.OUTPUT_MEM_WEN(OUTPUT_MEM_WEN), 
+		.OUTPUT_MEM_CEB(OUTPUT_MEM_CEB), 
+		.OUTPUT_MEM_DIN(OUTPUT_MEM_DIN),
+		.OUTPUT_MEM_ADDR(OUTPUT_MEM_ADDR)
 	); 
-	
 	
 	// Define input, weight, and output mems 
 	input_mem INPUT_MEM (
@@ -70,14 +74,12 @@ module q_projection_tb();
 		.Q(Wq_MEM_DOUT)
 	);
 	
-	/*
 	q_proj_mem OUTPUT_MEM (
-		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(OUTPUT_MEM_WEN),
-		.CEBM(1'b0), .WEBM(1'b0), .A(OUTPUT_MEM_ADDR), .D(OUTPUT_MEM_DIN), .BWEB(128'd0),
+		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(fin ? fin_output_wen : OUTPUT_MEM_WEN),
+		.CEBM(1'b0), .WEBM(1'b0), .A(fin ? fin_output_addr : OUTPUT_MEM_ADDR), .D(OUTPUT_MEM_DIN), .BWEB(128'd0),
 		.AM(5'd0), .DM(128'b0), .BWEBM(128'b0), .BIST(1'b0), .RTSEL(2'b0), .WTSEL(2'b0),
 		.Q(OUTPUT_MEM_DOUT)
-	);
-	*/ 
+	); 
 
 	// ======================= SRAM INIT ==========================
 	
@@ -175,16 +177,16 @@ module q_projection_tb();
 	    end
 	  endtask
 
-	  task automatic output_read(input logic [4:0] addr, output logic [127:0] data);
+	  task automatic output_read(input logic [6:0] addr, output logic [127:0] data);
 	    begin
 	      @(negedge clk);
-	      init_input_addr <= addr;
-	      init_input_wen  <= WEB_READ;
+	      fin_output_addr <= addr;
+	      fin_output_wen  <= WEB_READ;
 
 	      // read latency? ????? ??? 2cycle ??
 	      @(posedge clk);
 	      @(posedge clk);
-	      data = INPUT_MEM_DOUT;
+	      data = OUTPUT_MEM_DOUT;
 	    end
 	  endtask
 
@@ -214,7 +216,7 @@ module q_projection_tb();
 		data = Wq_MEM_DOUT;
 	    end
 	    endtask
-
+	
 
 	  task automatic dump_a_to_csv(input string fname);
 	    int fd;
@@ -291,6 +293,40 @@ module q_projection_tb();
 	    //$display("Wrote SRAM rows 0..31 to %s", fname);
 	  endtask
 
+	task automatic dump_output_rows_to_csv(input string fname);
+		    int fd;
+		    int tile, c0;
+		    logic [127:0] w;
+
+		    fd = $fopen("output.csv", "w");
+		    if (fd == 0) $fatal(1, "Failed to open %s", fname);
+
+		    // header
+		    $fwrite(fd, "row,tile,c0,word_hex");
+
+		    for (int b = 0; b < 16; b++) $fwrite(fd, ",byte%0d", b);
+		    $fwrite(fd, "\n");
+
+		    for (int row = 0; row < 128; row++) begin
+		      output_read(row[6:0], w);
+
+			tile = row;
+			c0   = row * 4;
+			$fwrite(fd, "%0d,%0d,%0d,0x%032h", row, tile, c0, w);
+
+
+		      for (int b = 0; b < 16; b++) begin
+			$fwrite(fd, ",%0d", $signed(w[127 - 8*b -: 8]));
+		      end
+		      $fwrite(fd, "\n");
+		    end
+
+		    $fclose(fd);
+		    //$display("Wrote SRAM rows 0..31 to %s", fname);
+		  endtask
+
+
+
 	    task automatic dump_wq_rows_to_csv(input string fname);
 	    int fd;
 	    int tr, tc;
@@ -324,9 +360,8 @@ module q_projection_tb();
 	    
 	    logic [511:0] prev;   
 	    integer my_f;
-	    integer my_t; 
-	    
-	    
+	    integer my_t;
+	     
 	    initial begin
 		    int tile, c0;
 		    int tr, tc;
@@ -336,6 +371,7 @@ module q_projection_tb();
 		    assert(my_f); 
 		    my_t = $fopen("t_out.txt", "w"); 
 		    assert(my_t); 
+		    
 		    // init
 		    init_input_addr = '0;
 		    INPUT_MEM_DIN  = '0;
@@ -344,7 +380,7 @@ module q_projection_tb();
 		    Wq_MEM_DIN  = '0;
 		    init_w_wen  = WEB_READ;
 		    init = 1;
-
+		    fin = 0; 
 		    // randomize A(4x128)
 		    obj = new();
 		    assert(obj.randomize());
@@ -389,11 +425,14 @@ module q_projection_tb();
 				for (int j = 0; j < 16; j++) begin 
 					$fwrite(my_f, "%11d ", $signed(out[j*32+:32]));
 				end 
-				$fwrite(my_f, "\n"); 
+				$fwrite(my_f, "\n");
 			end 
 		    end 	
-
+		
 		    $display("DONE: Wrote RTL result into q_out.txt");
+		    
+		    fin = 1; 
+		    dump_output_rows_to_csv("output.csv"); 
 		    $finish;   
 	end
 endmodule 

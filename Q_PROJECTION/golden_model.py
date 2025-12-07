@@ -2,6 +2,7 @@
 
 import csv
 import numpy as np
+import struct 
 
 csv_path = "sram_dump_rows0_31.csv"
 
@@ -91,6 +92,52 @@ with open(out_path, "w") as f:
         f.write(line + "\n")
 
 print("DONE: Wrote golden reference result to golden_out_tiles.txt")
+
+
+# frac_out from your quantized layer (Q14)
+frac_out = 14
+scale = 2.0 ** (-frac_out)   # = 1 / 16384
+
+out_path = "golden_out_tiles_fp32.txt"
+
+with open(out_path, "w") as f:
+    for tile in tiles:
+        flat_int = tile.reshape(-1).astype(np.int32)  # 16 int32 values
+        flat_fp  = flat_int.astype(np.float32) * scale  # convert to float32
+
+        # format: same spacing as before but with float instead of int
+        line = "".join(f"{v:11.7f}\n" for v in flat_fp)
+        f.write(line)
+print("DONE: Wrote FP32 golden output to", out_path)
+
+csv_path = "output.csv"          # <- your CSV
+out_path = "fp32.txt"   # <- output text file
+
+floats = []
+
+with open(csv_path, newline="") as f:
+    reader = csv.DictReader(f)
+    for row in reader:
+        # get 16 signed bytes and convert to 0..255
+        raw_bytes = []
+        for i in range(16):
+            b = int(row[f"byte{i}"])
+            if b < 0:
+                b += 256
+            raw_bytes.append(b)
+
+        # 4 FP32 values per row (bytes 0–3, 4–7, 8–11, 12–15)
+        for j in range(15, 0, -4):
+            chunk = bytes(raw_bytes[j-3:j+1])
+            # big-endian float32
+            val = struct.unpack('>f', chunk)[0]
+            floats.append(val)
+
+# write as plain text, one float per line (whitespace-separated)
+with open(out_path, "w") as f:
+    for v in floats:
+        f.write(f"{v:11.7f}\n")   # scientific notation; use {v} if you want raw repr
+
 
 Q32 = full_matrix.astype(np.int32)
 W32 = Wq.astype(np.int32)

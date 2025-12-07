@@ -1,5 +1,4 @@
-// Q Projection module of self attention block. 
-// Can support writes to output SRAM (commented out) 
+// QKV Projection module of self attention block. 
 
 `timescale 1ns/1ps
 
@@ -7,7 +6,7 @@ module Q_Projection(
 	input logic clk,
 	input logic rst, 
 	input logic en,
-        output logic valid,
+    output logic valid,
 	output logic [511:0] out, 	
 	input logic [127:0] INPUT_MEM_DOUT,
 	output logic INPUT_MEM_WEN,
@@ -16,12 +15,12 @@ module Q_Projection(
 	input logic [127:0] Wq_MEM_DOUT,
 	output logic Wq_MEM_WEN,
 	output logic Wq_MEM_CEB, 
-	output logic [9:0] Wq_MEM_ADDR
-	//input logic [127:0] OUTPUT_MEM_DOUT,
-	//output logic OUTPUT_MEM_WEN,
-	//output logic OUTPUT_MEM_CEB, 
-	//output logic [6:0] OUTPUT_MEM_ADDR,
-	//output logic [127:0] OUTPUT_MEM_DIN	
+	output logic [9:0] Wq_MEM_ADDR,
+	input logic [127:0] OUTPUT_MEM_DOUT,
+	output logic OUTPUT_MEM_WEN,
+	output logic OUTPUT_MEM_CEB, 
+	output logic [6:0] OUTPUT_MEM_ADDR,
+	output logic [127:0] OUTPUT_MEM_DIN	
 );
 
 	// Input mem addr signal (combinational)   
@@ -31,7 +30,7 @@ module Q_Projection(
 	logic [9:0]  Wq_MEM_ADDR_c; 
 
 	// Output mem addr signal (combinational) 
-	//logic [4:0] OUTPUT_MEM_ADDR_c; 
+	logic [6:0] OUTPUT_MEM_ADDR_c; 
 
 	// Indicates when inputs to systollic array are valid 
 	logic write_en;
@@ -54,9 +53,12 @@ module Q_Projection(
 	// Flag to signal when tile has been computed
 	logic done; 
 
+	// D/Q Input of FP32 Matrix FF
+	logic [511:0] fp32_d, fp32_q;
+	
 	// Drive output port 
 	assign out = out_matrix; 
-
+	
 	// Instantiate systolic array 	
 	Black_Box #(.N(4), .DATA_WIDTH(8), .ACC_WIDTH(32), .DEPTH(7), .COUNT(7), .CAP(11)) SYS_ARRAY ( 
 	    .clk(clk),
@@ -70,6 +72,27 @@ module Q_Projection(
 	    .counter(cycle_counter) 
 	);
 
+	genvar i; 
+	generate
+		for (i = 0; i < 16; i++) begin 
+			// Instantiate 16 INT32->FP32 Modules 
+			int32_to_fp32_scaled #(.FRAC_OUT(14)) i_to_f ( 
+				.int_in(out_matrix[i*32+:32]), 
+				.fp32_out(fp32_d[i*32+:32])
+			); 
+		end 
+	endgenerate 
+
+	// Register to store FP32 matrix
+	always_ff @ (posedge clk or posedge rst) begin 
+		if (rst) begin 
+			fp32_q <= '0; 
+		end
+		else if (valid) begin 
+			fp32_q <= fp32_d; 
+		end
+	end
+
 	// Define FSM states 
 	typedef enum logic [3:0] { 
 		IDLE, 
@@ -77,9 +100,10 @@ module Q_Projection(
 		LOAD2, 	
 		CALC, 
 		WRITE1, 
-	        WRITE2, 
+	    WRITE2, 
 		WRITE3, 
-		WRITE4, 
+		WRITE4,
+	    WRITE5, 	
 		RESET 	
 	} state_t; 
 
@@ -88,17 +112,17 @@ module Q_Projection(
 	always_ff @ (posedge clk or posedge rst) begin 
 		if (rst) begin 
 			state <= IDLE;
-		       	INPUT_MEM_ADDR <= '0; 
+		    INPUT_MEM_ADDR <= '0; 
 			Wq_MEM_ADDR <= '0;
-			//OUTPUT_MEM_ADDR <= '0; 
+			OUTPUT_MEM_ADDR <= '0; 
 			tile_counter <= '0; 
 			out_counter <= '0; 
 		end
 		else begin 
 			state <= next;
-		        INPUT_MEM_ADDR <= INPUT_MEM_ADDR_c; 
+		    INPUT_MEM_ADDR <= INPUT_MEM_ADDR_c; 
 			Wq_MEM_ADDR <= Wq_MEM_ADDR_c; 
-			//OUTPUT_MEM_ADDR <= OUTPUT_MEM_ADDR_c;
+			OUTPUT_MEM_ADDR <= OUTPUT_MEM_ADDR_c;
 			tile_counter <= tile_counter_c; 
 			out_counter <= out_counter_c; 	
 		end 
@@ -108,19 +132,19 @@ module Q_Projection(
 		next = state; 
 		INPUT_MEM_CEB = 1; 
 		Wq_MEM_CEB = 1; 
-		//OUTPUT_MEM_CEB = 1;
+		OUTPUT_MEM_CEB = 1;
 		INPUT_MEM_WEN = 1; 
 		Wq_MEM_WEN = 1; 
-		//OUTPUT_MEM_WEN = 1;
-	        write_en = 0; 	
+		OUTPUT_MEM_WEN = 1;
+	    write_en = 0; 	
 		INPUT_MEM_ADDR_c = INPUT_MEM_ADDR; 
 		Wq_MEM_ADDR_c = Wq_MEM_ADDR;
-		//OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR; 
-		//OUTPUT_MEM_DIN = '0;	
+		OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR; 
+		OUTPUT_MEM_DIN = '0;	
 		tile_counter_c = tile_counter; 
 		out_counter_c = out_counter; 
 		new_tile = 0;
-	        done = 0; 	
+	    done = 0; 	
 		case (state) 
 			IDLE: begin 
 				if (en) next = LOAD1; 	
@@ -128,7 +152,7 @@ module Q_Projection(
 	       		LOAD1: begin 
 				INPUT_MEM_CEB = 0; 
 				Wq_MEM_CEB = 0; 
-			       	next = LOAD2; 	
+			    next = LOAD2; 	
 			end 
 			LOAD2: begin 
 				write_en = 1;	
@@ -137,7 +161,7 @@ module Q_Projection(
 			CALC: begin 
 				if (cycle_counter == 1) begin 
 					INPUT_MEM_ADDR_c = INPUT_MEM_ADDR + 1;
-				        Wq_MEM_ADDR_c = Wq_MEM_ADDR + 32; 	
+				    Wq_MEM_ADDR_c = Wq_MEM_ADDR + 32; 	
 				end 
 				if (cycle_counter == 5) begin 
 					INPUT_MEM_CEB = 0; 
@@ -145,7 +169,7 @@ module Q_Projection(
 				end 
 				if ((cycle_counter == 10) && (tile_counter != 32)) begin 
 					write_en = 1;
-				        tile_counter_c = tile_counter + 1; 	
+				    tile_counter_c = tile_counter + 1; 	
 				end 
 				if ((cycle_counter == 11) && (tile_counter == 32)) begin 
 					out_counter_c = out_counter + 1; 
@@ -154,10 +178,6 @@ module Q_Projection(
 				end 
 			end
 			WRITE1: begin 
-				//OUTPUT_MEM_DIN = out_matrix[127:0]; 
-				//OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
-				//OUTPUT_MEM_CEB = '0; 
-				//OUTPUT_MEM_WEN = '0; 
 				if (out_counter != 32) begin 
 					INPUT_MEM_ADDR_c = '0;  
 					Wq_MEM_ADDR_c = out_counter;
@@ -165,10 +185,10 @@ module Q_Projection(
 				next = WRITE2; 	
 			end
 			WRITE2: begin 
-				//OUTPUT_MEM_DIN = out_matrix[255:128];
-				//OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
-				//OUTPUT_MEM_CEB = '0; 
-				//OUTPUT_MEM_WEN = '0; 
+				OUTPUT_MEM_DIN = fp32_q[127:0];
+				OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
+				OUTPUT_MEM_CEB = '0; 
+				OUTPUT_MEM_WEN = '0; 
 				if (out_counter != 32) begin 
 					INPUT_MEM_CEB = 0; 
 					Wq_MEM_CEB = 0; 
@@ -176,18 +196,25 @@ module Q_Projection(
 				next = WRITE3; 
 			end
 			WRITE3: begin 
-				//OUTPUT_MEM_DIN = out_matrix[383:256];	
-				//OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
-				//OUTPUT_MEM_CEB = '0; 
-				//OUTPUT_MEM_WEN = '0; 
+				OUTPUT_MEM_DIN = fp32_q[255:128];	
+				OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
+				OUTPUT_MEM_CEB = '0; 
+				OUTPUT_MEM_WEN = '0; 
 				next = WRITE4; 
-			end 
+			end
 			WRITE4: begin 
-				//OUTPUT_MEM_DIN = out_matrix[511:384]; 
-				//OUTPUT_MEM_CEB = '0; 
-				//OUTPUT_MEM_WEN = '0; 
+				OUTPUT_MEM_DIN = fp32_q[383:256];	
+				OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
+				OUTPUT_MEM_CEB = '0; 
+				OUTPUT_MEM_WEN = '0; 
+				next = WRITE5; 
+			end 
+			WRITE5: begin 
+				OUTPUT_MEM_DIN = fp32_q[511:384]; 
+				OUTPUT_MEM_CEB = '0; 
+				OUTPUT_MEM_WEN = '0; 
 				if (out_counter != 32) begin 	
-					//OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
+					OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
 					tile_counter_c = '0; 
 					next = RESET;  
 				end 
