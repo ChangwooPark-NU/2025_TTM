@@ -111,9 +111,11 @@ module Q_Projection(
 			bias_reg <= 0; 
 			bias_valid <= 0; 
 		end
-		else if (load_bias) 
-			bias_reg <= bias; 
-		bias_valid <= load_bias; 
+		else begin
+			bias_valid <= load_bias; 
+			if (load_bias) 
+				bias_reg <= bias; 
+		end 
 	end
 
 	// Define FSM states 

@@ -10,5 +10,6 @@ output_mem.v
 ../Q_PROJECTION/output.sv  
 ../Q_PROJECTION/sys_array1.sv 
 ../Q_PROJECTION/counter.sv 
-../Q_PROJECTION/black_box.sv 
+../Q_PROJECTION/black_box.sv
+../Q_PROJECTION/int_to_fp.v
 ../Q_PROJECTION/Q_projection.sv
