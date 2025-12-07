@@ -6,6 +6,7 @@ module Q_Projection(
 	input logic clk,
 	input logic rst, 
 	input logic en,
+	input logic [127:0] bias, 
     output logic valid,
 	output logic [511:0] out, 	
 	input logic [127:0] INPUT_MEM_DOUT,
@@ -56,6 +57,15 @@ module Q_Projection(
 	// D/Q Input of FP32 Matrix FF
 	logic [511:0] fp32_d, fp32_q;
 	
+	// Flag to signal when to load bias 
+	logic load_bias; 
+
+	// Pulse to signal when bias_reg is valid 
+	logic bias_valid; 
+
+	// Register to hold bias 
+	logic [127:0] bias_reg; 
+
 	// Drive output port 
 	assign out = out_matrix; 
 	
@@ -65,6 +75,8 @@ module Q_Projection(
 	    .rst(rst || new_tile),
 	    .tile_done(done), 
 	    .valid(valid),
+	    .load_bias(bias_valid),
+	    .bias(bias_reg), 
 	    .matrix_a(INPUT_MEM_DOUT),
 	    .matrix_b(Wq_MEM_DOUT),
 	    .matrix_c(out_matrix),
@@ -91,6 +103,17 @@ module Q_Projection(
 		else if (valid) begin 
 			fp32_q <= fp32_d; 
 		end
+	end
+
+	// Registers to store bias + valid signals 
+	always_ff @ (posedge clk or posedge rst) begin 
+		if (rst) begin 
+			bias_reg <= 0; 
+			bias_valid <= 0; 
+		end
+		else if (load_bias) 
+			bias_reg <= bias; 
+		bias_valid <= load_bias; 
 	end
 
 	// Define FSM states 
@@ -144,10 +167,14 @@ module Q_Projection(
 		tile_counter_c = tile_counter; 
 		out_counter_c = out_counter; 
 		new_tile = 0;
-	    done = 0; 	
+	    done = 0;
+    		load_bias = 0; 	    
 		case (state) 
 			IDLE: begin 
-				if (en) next = LOAD1; 	
+				if (en) begin 
+					load_bias = 1; 
+					next = LOAD1; 
+				end	
 			end
 	       		LOAD1: begin 
 				INPUT_MEM_CEB = 0; 
@@ -215,7 +242,7 @@ module Q_Projection(
 				OUTPUT_MEM_WEN = '0; 
 				if (out_counter != 32) begin 	
 					OUTPUT_MEM_ADDR_c = OUTPUT_MEM_ADDR + 1; 
-					tile_counter_c = '0; 
+					tile_counter_c = '0;  
 					next = RESET;  
 				end 
 				else begin 
@@ -223,7 +250,8 @@ module Q_Projection(
 				end
 			end
 		        RESET: begin 
-				new_tile = 1; 
+				new_tile = 1;
+			        load_bias = 1; 	
 				next = LOAD2; 
 			end	
 		endcase

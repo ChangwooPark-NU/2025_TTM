@@ -42,6 +42,7 @@ module q_projection_tb();
 		.clk(clk), 
 		.rst(rst), 
 		.en(en),
+		.bias(128'hFFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF_FFFF),
 		.out(out),
 		.valid(valid), 	
 		.INPUT_MEM_DOUT(INPUT_MEM_DOUT),

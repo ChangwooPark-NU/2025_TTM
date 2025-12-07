@@ -78,7 +78,7 @@ for t in range(num_tiles):
     c0 = t * tile_w
     c1 = c0 + tile_w
     tile = OUT[:, c0:c1]          # shape (4,4)
-    tiles.append(tile)
+    tiles.append(tile-1)
 
 tiles = np.array(tiles)          # shape (32, 4, 4)
 

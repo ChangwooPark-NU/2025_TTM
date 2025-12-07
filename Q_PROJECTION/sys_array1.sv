@@ -5,11 +5,13 @@
   )( 
       input logic clk, 
       input logic rst, 
+      input logic load_bias, 
+      input logic [ACC_WIDTH-1:0] bias[N], 
       input logic [DATA_WIDTH-1:0] in_a[N], 
       input logic [DATA_WIDTH-1:0] in_b[N], 
       output logic [N*N*ACC_WIDTH-1:0] out_flat // Single packed output
   ); 
-  
+     
       logic [DATA_WIDTH-1:0] a[N][N]; // Connections between PEs (left->right)
       logic [DATA_WIDTH-1:0] b[N][N]; // Connections between PEs (top->bottom)
       logic [ACC_WIDTH-1:0] out[N][N]; // Local PE outputs
@@ -21,6 +23,8 @@
                   PE #(.DATA_WIDTH(DATA_WIDTH), .ACC_WIDTH(ACC_WIDTH)) pe_inst (
                       .clk(clk),
                       .rst(rst),
+		      .load_bias(load_bias), 
+		      .bias(bias[j]), 
                       .in_a((j == 0) ? in_a[i] : a[i][j-1]), // First column gets input_a
                       .in_b((i == 0) ? in_b[j] : b[i-1][j]), // First row gets input_b
                       .out(out[i][j]),  // Local accumulation output

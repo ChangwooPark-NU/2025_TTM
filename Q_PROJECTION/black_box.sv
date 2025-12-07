@@ -9,6 +9,8 @@ module Black_Box #(
     input logic clk, 
     input logic rst,
     input logic tile_done,
+    input logic load_bias, 
+    input logic [127:0] bias, 
     input logic [127:0] matrix_a,
     input logic [127:0] matrix_b,
     output logic [511:0] matrix_c,
@@ -55,10 +57,21 @@ module Black_Box #(
     logic re7; // Read enable for 7 cycles
     logic capture;
 
+    logic [31:0] bias_arr[N]; 
+
+    always_comb begin 
+	    for (int i = 0; i < 4; i++) begin 
+		    bias_arr[i] = bias[i*32+:32]; 	
+            end   
+    end 
+
     // Instantiate Systolic Array
-    SystolicArray #(.N(N), .DATA_WIDTH(DATA_WIDTH), .ACC_WIDTH(ACC_WIDTH)) dut (        .clk(clk), 
+    SystolicArray #(.N(N), .DATA_WIDTH(DATA_WIDTH), .ACC_WIDTH(ACC_WIDTH)) dut (        
+	.clk(clk), 
         .rst(rst),
-        .in_a(in_a), 
+	.load_bias(load_bias), 
+        .bias(bias_arr), 
+	.in_a(in_a), 
         .in_b(in_b), 
         .out_flat(huh) 
     ); 
