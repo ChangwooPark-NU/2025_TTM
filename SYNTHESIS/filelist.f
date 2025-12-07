@@ -1,0 +1,13 @@
+input_mem.v 
+Wq_mem.v 
+../Q_PROJECTION/cap.sv
+../Q_PROJECTION/fifo1.sv 
+../Q_PROJECTION/fifo3.sv 
+../Q_PROJECTION/pe.sv 
+../Q_PROJECTION/fifo2.sv 
+../Q_PROJECTION/fifo4.sv  
+../Q_PROJECTION/output.sv  
+../Q_PROJECTION/sys_array1.sv 
+../Q_PROJECTION/counter.sv 
+../Q_PROJECTION/black_box.sv 
+../Q_PROJECTION/Q_projection.sv
