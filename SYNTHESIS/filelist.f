@@ -1,5 +1,6 @@
 input_mem.v 
-Wq_mem.v 
+Wq_mem.v
+output_mem.v
 ../Q_PROJECTION/cap.sv
 ../Q_PROJECTION/fifo1.sv 
 ../Q_PROJECTION/fifo3.sv 
