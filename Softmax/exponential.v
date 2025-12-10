@@ -3,7 +3,7 @@
 
 module exponential (
   input  wire                     Clock,
-  input  wire                     Reset,   // active-high (softmax ???)
+  input  wire                     Reset,   // active-high 
   input  wire                     Str,     // level-enable
   input  wire [`DATALENGTH-1:0]   Datain,
   output reg                      Ack,
@@ -28,7 +28,7 @@ module exponential (
   wire wa_div_1, wb_div_1, wz_div_1;
   wire wa_add_3, wb_add_3, wz_add_3;
 
-  // ---- module chain (?? ? ?? ??) ----
+
   adder A1 (
     one, T0,
     Str, Str, Str,
@@ -78,7 +78,7 @@ module exponential (
     To, wz_add_3, wa_add_3, wb_add_3
   );
 
-  // ---- control ----
+
   localparam integer LAT = 140;   // ?? ?? ? ???
   integer count;
 
@@ -90,22 +90,21 @@ module exponential (
       count   <= 0;
     end else begin
       if (!Str) begin
-        // *** run ??? ???? ??? ??? ***
+
         T0    <= 32'h00000000;
         Ack   <= 1'b0;
         count <= 0;
       end else begin
-        // enable ?? ?? ??
+
         T0 <= Datain;
 
-        // ?? ?? ? ack
         if (count >= LAT) begin
-          Ack     <= 1'b1;   // level? ?? (softmax? Ack==1111 ?????)
+          Ack     <= 1'b1;   
           DataOut <= To;
         end else begin
           count   <= count + 1;
           Ack     <= 1'b0;
-          DataOut <= To;     // ?????? ?? ????
+          DataOut <= To;    
         end
       end
     end
