@@ -19,7 +19,7 @@ def load_biases(path):
     assert bias.shape == (128,), f"Expected 128 bias values, got {bias.shape}"
     return bias
 
-bias = load_biases("Wv_bias_int32.hex")
+bias = load_biases("Wq_bias_int32.hex")
 
 csv_path = "sram_dump_rows0_31.csv"
 

@@ -107,12 +107,13 @@ module q_projection_tb();
 
 	initial begin 
 		$readmemh("input_q_int8_B1T4C128.hex", matrix_in); 
-		$readmemh("Wq_weight_int8.hex", matrix_q);
-		$readmemh("Wk_weight_int8.hex", matrix_k);
-		$readmemh("Wv_weight_int8.hex", matrix_v); 
+		$readmemh("Q_weights.hex", matrix_q);
+		$readmemh("K_weights.hex", matrix_k);
+		$readmemh("V_weights.hex", matrix_v); 
 	end	
 		// Pack 4x4 tile from rows 0..3 and cols c0..c0+3 into 128b
-	  function automatic logic [127:0] pack_tile_4x4_1(input int c0);
+	/*  
+	function automatic logic [127:0] pack_tile_4x4_1(input int c0);
 	    logic [127:0] w_1;
 	    int r, c, idx;
 	    begin
@@ -129,7 +130,26 @@ module q_projection_tb();
 	      return w_1;
 	    end
 	  endfunction
+	*/
+	function automatic logic [127:0] pack_tile_4x4_1(input int c0);
+  logic [127:0] w_1;
+  int r, c, idx;
+  begin
+    w_1 = '0;
+    idx = 0;
 
+    // din[7:0]=A[3][c0+3] ... din[127:120]=A[0][c0+0]
+    for (r = 3; r >= 0; r--) begin
+      for (c = 3; c >= 0; c--) begin
+        w_1[8*idx +: 8] = matrix_in[r][c0 + c];
+        idx++;
+      end
+    end
+
+    return w_1;
+  end
+endfunction
+/*
 		// Pack B 4x4 tile at tile-row tr (0..31), tile-col tc (0..31) into 128b
 	    function automatic logic [127:0] pack_q_tile_4x4(input int tr, input int tc);
 	    logic [127:0] w_2;
@@ -196,7 +216,85 @@ module q_projection_tb();
 		return w_2;
 	    end
 	    endfunction  
-	   task automatic sram_write(input logic [4:0] addr, input logic [127:0] data);
+*/
+// Pack B 4x4 tile at tile-row tr (0..31), tile-col tc (0..31) into 128b
+function automatic logic [127:0] pack_q_tile_4x4(input int tr, input int tc);
+  logic [127:0] w_2;
+  int r, c, idx;
+  int r0, c0;
+  begin
+    w_2 = '0;
+    idx = 0;
+    r0  = tr * 4;
+    c0  = tc * 4;
+
+    // din[7:0]   = B[r0+0][c0+0]  (top-left)
+    // din[15:8]  = B[r0+0][c0+1]
+    // ...
+    // din[127:120] = B[r0+3][c0+3] (bottom-right)
+    for (r = 3; r >=0; r--) begin
+      for (c = 3; c >= 0; c--) begin
+        w_2[8*idx +: 8] = matrix_q[r0 + r][c0 + c];
+        idx++;
+      end
+    end
+
+    return w_2;
+  end
+endfunction
+// Pack B 4x4 tile at tile-row tr (0..31), tile-col tc (0..31) into 128b
+function automatic logic [127:0] pack_k_tile_4x4(input int tr, input int tc);
+  logic [127:0] w_2;
+  int r, c, idx;
+  int r0, c0;
+  begin
+    w_2 = '0;
+    idx = 0;
+    r0  = tr * 4;
+    c0  = tc * 4;
+
+    // din[7:0]   = B[r0+0][c0+0]  (top-left)
+    // din[15:8]  = B[r0+0][c0+1]
+    // ...
+    // din[127:120] = B[r0+3][c0+3] (bottom-right)
+    for (r = 3; r >= 0; r--) begin
+      for (c = 3; c >= 0; c--) begin
+        w_2[8*idx +: 8] = matrix_k[r0 + r][c0 + c];
+        idx++;
+      end
+    end
+
+    return w_2;
+  end
+endfunction
+// Pack B 4x4 tile at tile-row tr (0..31), tile-col tc (0..31) into 128b
+function automatic logic [127:0] pack_v_tile_4x4(input int tr, input int tc);
+  logic [127:0] w_2;
+  int r, c, idx;
+  int r0, c0;
+  begin
+    w_2 = '0;
+    idx = 0;
+    r0  = tr * 4;
+    c0  = tc * 4;
+
+    // din[7:0]   = B[r0+0][c0+0]  (top-left)
+    // din[15:8]  = B[r0+0][c0+1]
+    // ...
+    // din[127:120] = B[r0+3][c0+3] (bottom-right)
+    for (r = 3; r >= 0; r--) begin
+      for (c = 3; c >= 0; c--) begin
+        w_2[8*idx +: 8] = matrix_v[r0 + r][c0 + c];
+        idx++;
+      end
+    end
+
+    return w_2;
+  end
+endfunction
+
+
+ 	    task automatic sram_write(input logic [4:0] addr, input logic [127:0] data);
 	    begin
 	      @(negedge clk);
 	      init_input_addr <= addr;
@@ -235,7 +333,7 @@ module q_projection_tb();
 	      // read latency? ????? ??? 2cycle ??
 	      @(posedge clk);
 	      @(posedge clk);
-	      data = OUTPUT_MEM_DOUT_v;
+	      data = OUTPUT_MEM_DOUT_q;
 	    end
 	  endtask
 
@@ -266,7 +364,7 @@ module q_projection_tb();
 
 		@(posedge clk);
 		@(posedge clk); // (Wq_mem? 2-cycle?? ??)
-		data = Wv_MEM_DOUT;
+		data = Wq_MEM_DOUT;
 	    end
 	    endtask
 	
@@ -369,7 +467,7 @@ module q_projection_tb();
 
 
 		      for (int b = 0; b < 16; b++) begin
-			$fwrite(fd, ",%0d", $signed(w[127 - 8*b -: 8]));
+			$fwrite(fd, ",%0d", $signed(w[127-8*b-:8]));
 		      end
 		      $fwrite(fd, "\n");
 		    end
@@ -402,7 +500,7 @@ module q_projection_tb();
 		$fwrite(fd, "%0d,%0d,%0d,0x%032h", row, tr, tc, w);
 
 		for (int b = 0; b < 16; b++) begin
-		$fwrite(fd, ",%0d", $signed(w[127 - 8*b -: 8]));
+		$fwrite(fd, ",%0d", $signed(w[127 -8*b-: 8]));
 		end
 		$fwrite(fd, "\n");
 	    end

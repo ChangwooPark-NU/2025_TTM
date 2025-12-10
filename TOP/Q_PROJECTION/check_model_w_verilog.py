@@ -8,18 +8,20 @@ def load_biases(path):
     vals = []
     with open(path) as f:
         for line in f:
+            print(line)
             s = line.strip()
             if not s:
                 continue
             # parse hex, wrap to signed int32
             v = int(s, 16)
             v = np.int32(v)
+            print(v)
             vals.append(v)
     bias = np.array(vals, dtype=np.int32)
     assert bias.shape == (128,), f"Expected 128 bias values, got {bias.shape}"
     return bias
 
-bias = load_biases("Wv_bias_int32.hex")
+bias = load_biases("Wq_bias_int32.hex")
 
 csv_path = "sram_dump_rows0_31.csv"
 
@@ -82,11 +84,11 @@ np.set_printoptions(linewidth=10_000)
 # Wq: 128x128 int8
 Q = full_matrix.astype(np.int32)
 W = Wq.astype(np.int32)
-
 # 1) Compute matrix multiply: 4x128 @ 128x128 -> 4x128
 OUT = Q @ W + bias   # shape (4, 128), dtype int32
-
-gold = np.load("V_out_int32_B1T4C128.npy")
+gold = np.load("Q_out_int32_B1T4C128.npy")
+print(OUT)
+print(gold)
 
 if gold.shape != OUT.shape:
     gold = gold.reshape(OUT.shape)
@@ -167,9 +169,6 @@ with open(out_path, "w") as f:
 Q32 = full_matrix.astype(np.int32)
 W32 = Wq.astype(np.int32)
 
-OUT = Q32 @ W32   # shape (4,128), dtype=int32
-
-OUT_topleft = OUT[:, 0:4].copy()
 
 acc = np.zeros((4, 4), dtype=np.int64)   # bigger dtype to be safe
 partials = []
@@ -214,3 +213,101 @@ def pack_tile_512hex(tile):
 for t, tile in enumerate(partials):
     packed = pack_tile_512hex(tile)
 
+
+import os
+import numpy as np
+
+
+
+def load_int8_hex(path, expected_len=None, shape=None):
+    vals = []
+    with open(path, "r") as f:
+        for line in f:
+            s = line.strip()
+            if not s:
+                continue
+            v = int(s, 16)          # 0..255
+            if v & 0x80:            # sign bit for 8-bit
+                v -= 0x100          # convert to signed
+            vals.append(v)
+    arr = np.array(vals, dtype=np.int8)
+    if expected_len is not None:
+        assert arr.size == expected_len, f"{path}: expected {expected_len}, got {arr.size}"
+    if shape is not None:
+        arr = arr.reshape(shape)
+    return arr
+
+
+def load_int32_hex(path, expected_len=None, shape=None):
+    vals = []
+    with open(path, "r") as f:
+        for line in f:
+            s = line.strip()
+            if not s:
+                continue
+            v = int(s, 16)              # 0..0xFFFFFFFF
+            if v & 0x80000000:          # sign bit for 32-bit
+                v -= 0x100000000        # convert to signed
+            vals.append(v)
+    arr = np.array(vals, dtype=np.int32)
+    if expected_len is not None:
+        assert arr.size == expected_len, f"{path}: expected {expected_len}, got {arr.size}"
+    if shape is not None:
+        arr = arr.reshape(shape)
+    return arr
+
+
+# ---------- 1) Load quantized int8 input (B1T4C128) -> reshape to (4,128) ----------
+x_path = "input_q_int8_B1T4C128.hex"
+X_int8 = load_int8_hex(x_path, expected_len=4 * 128, shape=(4, 128))
+print("X_int8 shape:", X_int8.shape, "min/max:", X_int8.min(), X_int8.max())
+
+
+# ---------- 2) Load int8 weights (128x128, row-major: [out, in]) ----------
+w_path = "Wq_weight_int8.hex"
+W_int8 = load_int8_hex(w_path, expected_len=128 * 128, shape=(128, 128))
+print("W_int8 shape:", W_int8.shape, "min/max:", W_int8.min(), W_int8.max())
+
+# ---------- 3) Load int32 bias (128) ----------
+b_path = "Wq_bias_int32.hex"
+b_int32 = load_int32_hex(b_path, expected_len=128, shape=(128,))
+print("b_int32 shape:", b_int32.shape, "min/max:", b_int32.min(), b_int32.max())
+
+# ---------- 4) Compute Y = X_int8 @ W_int8.T + b_int32 ----------
+X32 = X_int8.astype(np.int32)          # (4,128)
+W32 = W_int8.astype(np.int32)         # (128,128)
+
+# forward_int does: acc = x32 @ w32.t()
+Y = X32 @ W32.T                       # (4,128)
+Y = Y + b_int32                       # bias broadcast across rows
+print(OUT==Y)
+WT = W32.T.astype(np.int8, copy=False)   # shape (128, 128)
+
+# Flatten row-major so WT[row, col] maps to Verilog matrix_q[row][col]
+flat = WT.reshape(-1)
+
+with open("Q_weights.hex", "w") as f:
+    for v in flat:
+        f.write(f"{int(v) & 0xFF:02X}\n")   # one byte per line, 2 hex chars
+
+print("Wrote V_weights.hex for W32.T (1 byte per line)")
+print(OUT)
+print(Y)
+
+# ---- read back and verify ----
+vals = []
+with open("Q_weights.hex", "r") as f:
+    for line in f:
+        line = line.strip()
+        if not line:
+            continue
+        vals.append(int(line, 16))
+
+vt_flat_u8 = np.array(vals, dtype=np.uint8)
+assert vt_flat_u8.size == WT.size
+
+Vt = vt_flat_u8.view(np.int8).reshape(WT.shape)
+
+print("Vt == W32.T ?", np.array_equal(Vt, W))
+print(Vt)
+print(W)
