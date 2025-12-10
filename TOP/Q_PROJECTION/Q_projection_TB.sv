@@ -426,7 +426,7 @@ module q_projection_tb();
 		    en = 1;
 		    #10
 		    en = 0;  
-		    for (int i = 0; i < 20000; i++) begin 	
+		    for (int i = 0; i < 2000000; i++) begin 	
 			#10
 			if (out_v !== prev) begin 
 				$fwrite(my_t,"%x\n", out_v); 

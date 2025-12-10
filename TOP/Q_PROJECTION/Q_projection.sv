@@ -204,7 +204,7 @@ module QKV_Projection(
 		new_tile = 0;
 	    done = 0;
     		load_bias = 0; 	    
-		fin = 0; 
+		fin = fin_reg1; 
 		case (state) 
 			IDLE: begin 
 				if (en) begin 

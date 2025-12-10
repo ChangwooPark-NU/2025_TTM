@@ -72,6 +72,9 @@ module top (
         logic OUTPUT_MEM_CEB_v;
         logic [6:0] OUTPUT_MEM_ADDR_v;
 	logic finished_v; 
+	logic finished; 
+
+	assign finished = finished_q & finished_k & finished_v; 
 
 	// Instantiate DUT 
 	QKV_Projection qut ( 
@@ -140,6 +143,39 @@ module top (
 		.finished(finished_v)
 	); 
 
+	
+	logic [6:0] fp_q_addr, fp_k_addr, fp_v_addr;  
+	logic fp_valid;
+	logic [1:0] fp_row; 
+	logic [4:0] fp_group; 
+	logic [127:0] fp_out; 
+	logic fp_done; 
+
+	attn_top_4x4_128_mha4 #(.READ_LAT(2)) fp ( 
+
+	  .clk(clk),
+	  .rst_n(~rst),           // active-low 
+	  .start(finished),           // start attention pipeline after Q/K/V ready
+
+	  // Q/K/V SRAM read interfaces (128-bit = 4 lanes fp32)
+	  .Q_mem_addr(fp_q_addr),
+	  .K_mem_addr(fp_k_addr),
+	  .V_mem_addr(fp_v_addr),
+
+	  .Q_mem_out(OUTPUT_MEM_DOUT_q),
+	  .K_mem_out(OUTPUT_MEM_DOUT_k),
+	  .V_mem_out(OUTPUT_MEM_DOUT_v),
+
+	  // Output stream
+	  .out_valid(fp_valid),
+	  .out_row(fp_row),
+	  .out_group(fp_group),       // 0..31
+	  .out_data(fp_out),
+
+	  .done(fp_done)
+	);
+		
+
 	// Define input, weight, and output mems 
 	input_mem INPUT_MEM_q (
 		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0 /*init ? 1'b0 : INPUT_MEM_CEB*/), .WEB(init ? init_input_wen : INPUT_MEM_WEN_q),
@@ -156,8 +192,8 @@ module top (
 	);
 	
 	q_proj_mem OUTPUT_MEM (
-		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(fin ? fin_output_wen : OUTPUT_MEM_WEN_q),
-		.CEBM(1'b0), .WEBM(1'b0), .A(fin ? fin_output_addr : OUTPUT_MEM_ADDR_q), .D(OUTPUT_MEM_DIN_q), .BWEB(128'd0),
+		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(!finished ? (fin ? fin_output_wen : OUTPUT_MEM_WEN_q) : 1'b1),
+		.CEBM(1'b0), .WEBM(1'b0), .A(!finished ? (fin ? fin_output_addr : OUTPUT_MEM_ADDR_q):  fp_q_addr), .D(OUTPUT_MEM_DIN_q), .BWEB(128'd0),
 		.AM(5'd0), .DM(128'b0), .BWEBM(128'b0), .BIST(1'b0), .RTSEL(2'b0), .WTSEL(2'b0),
 		.Q(OUTPUT_MEM_DOUT_q)
 	);
@@ -177,8 +213,8 @@ module top (
 	);
 	
 	q_proj_mem OUTPUT_MEM_k (
-		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(fin ? fin_output_wen : OUTPUT_MEM_WEN_k),
-		.CEBM(1'b0), .WEBM(1'b0), .A(fin ? fin_output_addr : OUTPUT_MEM_ADDR_k), .D(OUTPUT_MEM_DIN_k), .BWEB(128'd0),
+		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(!finished ? (fin ? fin_output_wen : OUTPUT_MEM_WEN_k) : 1'b1),
+		.CEBM(1'b0), .WEBM(1'b0), .A(!finished ? (fin ? fin_output_addr : OUTPUT_MEM_ADDR_k) : fp_k_addr), .D(OUTPUT_MEM_DIN_k), .BWEB(128'd0),
 		.AM(5'd0), .DM(128'b0), .BWEBM(128'b0), .BIST(1'b0), .RTSEL(2'b0), .WTSEL(2'b0),
 		.Q(OUTPUT_MEM_DOUT_k)
 	);
@@ -198,8 +234,8 @@ module top (
 	);
 	
 	q_proj_mem OUTPUT_MEM_v (
-		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(fin ? fin_output_wen : OUTPUT_MEM_WEN_v),
-		.CEBM(1'b0), .WEBM(1'b0), .A(fin ? fin_output_addr : OUTPUT_MEM_ADDR_v), .D(OUTPUT_MEM_DIN_v), .BWEB(128'd0),
+		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(!finished ? (fin ? fin_output_wen : OUTPUT_MEM_WEN_v) : 1'b1),
+		.CEBM(1'b0), .WEBM(1'b0), .A(!finished ? (fin ? fin_output_addr : OUTPUT_MEM_ADDR_v) :  fp_v_addr), .D(OUTPUT_MEM_DIN_v), .BWEB(128'd0),
 		.AM(5'd0), .DM(128'b0), .BWEBM(128'b0), .BIST(1'b0), .RTSEL(2'b0), .WTSEL(2'b0),
 		.Q(OUTPUT_MEM_DOUT_v)
 	);
