@@ -3,7 +3,7 @@
 
 module exponential (
   input  wire                     Clock,
-  input  wire                     Reset,   // active-high (softmax ???)
+  input  wire                     Reset,   // active-high 
   input  wire                     Str,     // level-enable
   input  wire [`DATALENGTH-1:0]   Datain,
   output reg                      Ack,
