@@ -3,22 +3,23 @@
 
 module exponential (
   input  wire                     Clock,
-  input  wire                     Reset,   // active-high 
+  input  wire                     Reset,   // active-high (softmax ???)
   input  wire                     Str,     // level-enable
   input  wire [`DATALENGTH-1:0]   Datain,
   output reg                      Ack,
   output reg  [`DATALENGTH-1:0]   DataOut
 );
 
-
+  // ---- constants ----
   wire [`DATALENGTH-1:0] one      = 32'h3f800000; // 1.0
   wire [`DATALENGTH-1:0] half     = 32'h3f000000; // 0.5
   wire [`DATALENGTH-1:0] oversix  = 32'h3e2aaaab; // 1/6
--
+
+  // ---- datapath regs/wires ----
   reg  [`DATALENGTH-1:0] T0;
   wire [`DATALENGTH-1:0] T1, Ts, Tsh, T2, Tc, Td, To;
 
-  // handshake wires 
+  // handshake wires (?? ?? ?? ??)
   wire wa_add_1, wb_add_1, wz_add_1;
   wire wa_mul_1, wb_mul_1, wz_mul_1;
   wire wa_sh_1,  wb_sh_1,  wz_sh_1;
@@ -27,7 +28,7 @@ module exponential (
   wire wa_div_1, wb_div_1, wz_div_1;
   wire wa_add_3, wb_add_3, wz_add_3;
 
-
+  // ---- module chain (?? ? ?? ??) ----
   adder A1 (
     one, T0,
     Str, Str, Str,
@@ -77,8 +78,8 @@ module exponential (
     To, wz_add_3, wa_add_3, wb_add_3
   );
 
-
-  localparam integer LAT = 140;   
+  // ---- control ----
+  localparam integer LAT = 140;   // ?? ?? ? ???
   integer count;
 
   always @(posedge Clock or negedge Reset) begin
@@ -89,7 +90,7 @@ module exponential (
       count   <= 0;
     end else begin
       if (!Str) begin
-
+        // *** run ??? ???? ??? ??? ***
         T0    <= 32'h00000000;
         Ack   <= 1'b0;
         count <= 0;
@@ -97,14 +98,14 @@ module exponential (
         // enable ?? ?? ??
         T0 <= Datain;
 
-
+        // ?? ?? ? ack
         if (count >= LAT) begin
-          Ack     <= 1'b1;  
+          Ack     <= 1'b1;   // level? ?? (softmax? Ack==1111 ?????)
           DataOut <= To;
         end else begin
           count   <= count + 1;
           Ack     <= 1'b0;
-          DataOut <= To;    
+          DataOut <= To;     // ?????? ?? ????
         end
       end
     end
