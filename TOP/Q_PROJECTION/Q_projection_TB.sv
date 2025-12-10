@@ -16,23 +16,45 @@ module q_projection_tb();
 	logic fin; 
 	logic [6:0] fin_output_addr; 
 	logic fin_output_wen; 
-	logic [127:0] INPUT_MEM_DIN;
-	logic [127:0] OUTPUT_MEM_DIN;
+	logic [127:0] INPUT_MEM_DIN_q;
+	logic [127:0] OUTPUT_MEM_DIN_q;
 	logic [127:0] Wq_MEM_DIN;
+	logic [127:0] INPUT_MEM_DIN_k;
+	logic [127:0] OUTPUT_MEM_DIN_k;
+	logic [127:0] Wk_MEM_DIN;
+	logic [127:0] INPUT_MEM_DIN_v;
+	logic [127:0] OUTPUT_MEM_DIN_v;
+	logic [127:0] Wv_MEM_DIN;
 	// tb 
-	logic [511:0] out; 
-	logic valid; 	
-	logic [127:0] INPUT_MEM_DOUT;
-	logic [127:0] OUTPUT_MEM_DOUT;
+	logic [511:0] out_q; 
+	logic valid_q; 	
+	logic [127:0] INPUT_MEM_DOUT_q;
+	logic [127:0] OUTPUT_MEM_DOUT_q;
 	logic [127:0] Wq_MEM_DOUT;
+
+	logic [511:0] out_k; 
+	logic valid_k; 	
+	logic [127:0] INPUT_MEM_DOUT_k;
+	logic [127:0] OUTPUT_MEM_DOUT_k;
+	logic [127:0] Wk_MEM_DOUT;
+	
+	logic [511:0] out_v; 
+	logic valid_v; 	
+	logic [127:0] INPUT_MEM_DOUT_v;
+	logic [127:0] OUTPUT_MEM_DOUT_v;
+	logic [127:0] Wv_MEM_DOUT;
 	
 	// Instantiate DUT 
 	top dut (
 		.clk(clk), 
 		.rst(rst),
        		.en(en), 
-		.out(out),
-		.valid(valid), 	
+		.out_q(out_q),
+		.valid_q(valid_q), 	
+		.out_k(out_k),
+		.valid_k(valid_k), 	
+		.out_v(out_v),
+		.valid_v(valid_v), 	
 		.init_input_addr(init_input_addr),
   	        .init_w_addr(init_w_addr),
   		.init_input_wen(init_input_wen), 
@@ -41,13 +63,24 @@ module q_projection_tb();
 		.fin(fin), 
 	        .fin_output_addr(fin_output_addr), 
 		.fin_output_wen(fin_output_wen),
-		.INPUT_MEM_DIN(INPUT_MEM_DIN), 
-		.OUTPUT_MEM_DIN(OUTPUT_MEM_DIN), 
+		.INPUT_MEM_DIN_q(INPUT_MEM_DIN_q), 
+		.OUTPUT_MEM_DIN_q(OUTPUT_MEM_DIN_q), 
 		.Wq_MEM_DIN(Wq_MEM_DIN),	
-		.INPUT_MEM_DOUT(INPUT_MEM_DOUT), 
-		.OUTPUT_MEM_DOUT(OUTPUT_MEM_DOUT), 
-		.Wq_MEM_DOUT(Wq_MEM_DOUT)	
-	
+		.INPUT_MEM_DOUT_q(INPUT_MEM_DOUT_q), 
+		.OUTPUT_MEM_DOUT_q(OUTPUT_MEM_DOUT_q), 
+		.Wq_MEM_DOUT(Wq_MEM_DOUT),	
+		.INPUT_MEM_DIN_k(INPUT_MEM_DIN_k), 
+		.OUTPUT_MEM_DIN_k(OUTPUT_MEM_DIN_k), 
+		.Wk_MEM_DIN(Wk_MEM_DIN),	
+		.INPUT_MEM_DOUT_k(INPUT_MEM_DOUT_k), 
+		.OUTPUT_MEM_DOUT_k(OUTPUT_MEM_DOUT_k), 
+		.Wk_MEM_DOUT(Wk_MEM_DOUT),		
+		.INPUT_MEM_DIN_v(INPUT_MEM_DIN_v), 
+		.OUTPUT_MEM_DIN_v(OUTPUT_MEM_DIN_v), 
+		.Wv_MEM_DIN(Wv_MEM_DIN),	
+		.INPUT_MEM_DOUT_v(INPUT_MEM_DOUT_v), 
+		.OUTPUT_MEM_DOUT_v(OUTPUT_MEM_DOUT_v), 
+		.Wv_MEM_DOUT(Wv_MEM_DOUT)	
 	); 
 	
 	// ======================= SRAM INIT ==========================
@@ -122,15 +155,21 @@ module q_projection_tb();
 	    begin
 	      @(negedge clk);
 	      init_input_addr <= addr;
-	      INPUT_MEM_DIN  <= data;
+	      INPUT_MEM_DIN_q  <= data;
+	      INPUT_MEM_DIN_k  <= data;
+	      INPUT_MEM_DIN_v  <= data;
+
 	      init_input_wen  <= WEB_WRITE;
 
 	      @(posedge clk); // write happens here (assumption)
 
 	      @(negedge clk);
 	      init_input_wen  <= WEB_READ;
-	      INPUT_MEM_DIN  <= '0;
-	    end
+	      INPUT_MEM_DIN_q  <= '0;
+	      INPUT_MEM_DIN_k  <= '0;
+   	      INPUT_MEM_DIN_v  <= '0;
+ 
+      	    end
 	  endtask
 
 	  task automatic sram_read(input logic [4:0] addr, output logic [127:0] data);
@@ -142,7 +181,7 @@ module q_projection_tb();
 	      // read latency? ????? ??? 2cycle ??
 	      @(posedge clk);
 	      @(posedge clk);
-	      data = INPUT_MEM_DOUT;
+	      data = INPUT_MEM_DOUT_v;
 	    end
 	  endtask
 
@@ -155,7 +194,7 @@ module q_projection_tb();
 	      // read latency? ????? ??? 2cycle ??
 	      @(posedge clk);
 	      @(posedge clk);
-	      data = OUTPUT_MEM_DOUT;
+	      data = OUTPUT_MEM_DOUT_v;
 	    end
 	  endtask
 
@@ -164,6 +203,8 @@ module q_projection_tb();
 		@(negedge clk);
 		init_w_addr <= addr;
 		Wq_MEM_DIN  <= data;
+		Wk_MEM_DIN  <= data;
+		Wv_MEM_DIN  <= data;
 		init_w_wen  <= WEB_WRITE;
 
 		@(posedge clk); // write latch
@@ -171,7 +212,9 @@ module q_projection_tb();
 		@(negedge clk);
 		init_w_wen  <= WEB_READ;
 		Wq_MEM_DIN  <= '0;
-	    end
+	   	Wk_MEM_DIN  <= '0;
+		Wv_MEM_DIN  <= '0; 
+		end
 	    endtask
 
 	    task automatic wq_read(input logic [9:0] addr, output logic [127:0] data);
@@ -182,7 +225,7 @@ module q_projection_tb();
 
 		@(posedge clk);
 		@(posedge clk); // (Wq_mem? 2-cycle?? ??)
-		data = Wq_MEM_DOUT;
+		data = Wv_MEM_DOUT;
 	    end
 	    endtask
 	
@@ -342,7 +385,7 @@ module q_projection_tb();
 		    
 		    // init
 		    init_input_addr = '0;
-		    INPUT_MEM_DIN  = '0;
+		    INPUT_MEM_DIN_q  = '0;
 		    init_input_wen  = WEB_READ;
 		    init_w_addr = '0;
 		    Wq_MEM_DIN  = '0;
@@ -385,16 +428,17 @@ module q_projection_tb();
 		    en = 0;  
 		    for (int i = 0; i < 20000; i++) begin 	
 			#10
-			if (out !== prev) begin 
-				$fwrite(my_t,"%x\n", out); 
-				prev = out;
+			if (out_v !== prev) begin 
+				$fwrite(my_t,"%x\n", out_v); 
+				prev = out_v;
 			end	
-			if (valid) begin 
+			if (valid_v) begin 
 				for (int j = 0; j < 16; j++) begin 
-					$fwrite(my_f, "%11d ", $signed(out[j*32+:32]));
+					$fwrite(my_f, "%11d ", $signed(out_v[j*32+:32]));
 				end 
 				$fwrite(my_f, "\n");
 			end 
+		   	 
 		    end 	
 		
 		    $display("DONE: Wrote RTL result into q_out.txt");

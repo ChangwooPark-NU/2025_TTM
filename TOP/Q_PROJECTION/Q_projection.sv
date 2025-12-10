@@ -2,7 +2,7 @@
 
 `timescale 1ns/1ps
 
-module Q_Projection( 
+module QKV_Projection( 
 	input logic clk,
 	input logic rst, 
 	input logic en,
@@ -20,7 +20,8 @@ module Q_Projection(
 	output logic OUTPUT_MEM_WEN,
 	output logic OUTPUT_MEM_CEB, 
 	output logic [6:0] OUTPUT_MEM_ADDR,
-	output logic [127:0] OUTPUT_MEM_DIN	
+	output logic [127:0] OUTPUT_MEM_DIN,
+	output logic finished 	
 );
 
 	// Input mem addr signal (combinational)   
@@ -69,9 +70,13 @@ module Q_Projection(
 	// Registers to hold bias reg file addresses 
 	logic [6:0] a1, a2, a3, a4; 
 
-	// Drive output port 
+	// Fin shift reg (add 3 cycle delay) 
+	logic fin, fin_reg1, fin_reg2, fin_reg3;
+
+	// Drive output ports 
 	assign out = out_matrix; 
-	
+	assign finished = fin_reg3; 
+
 	// Instantiate systolic array 	
 	Black_Box #(.N(4), .DATA_WIDTH(8), .ACC_WIDTH(32), .DEPTH(7), .COUNT(7), .CAP(11)) SYS_ARRAY ( 
 	    .clk(clk),
@@ -164,6 +169,9 @@ module Q_Projection(
 			OUTPUT_MEM_ADDR <= '0; 
 			tile_counter <= '0; 
 			out_counter <= '0; 
+			fin_reg1 <= 0; 
+			fin_reg2 <= 0;
+		        fin_reg3 <= 0; 	
 		end
 		else begin 
 			state <= next;
@@ -171,7 +179,10 @@ module Q_Projection(
 			Wq_MEM_ADDR <= Wq_MEM_ADDR_c; 
 			OUTPUT_MEM_ADDR <= OUTPUT_MEM_ADDR_c;
 			tile_counter <= tile_counter_c; 
-			out_counter <= out_counter_c; 	
+			out_counter <= out_counter_c; 
+			fin_reg1 <= fin;
+			fin_reg2 <= fin_reg1;
+			fin_reg3 <= fin_reg2; 	
 		end 
 	end 
 
@@ -193,6 +204,7 @@ module Q_Projection(
 		new_tile = 0;
 	    done = 0;
     		load_bias = 0; 	    
+		fin = 0; 
 		case (state) 
 			IDLE: begin 
 				if (en) begin 
@@ -271,6 +283,7 @@ module Q_Projection(
 				end 
 				else begin 
 					next = IDLE;
+					fin = 1; 
 				end
 			end
 		        RESET: begin 
