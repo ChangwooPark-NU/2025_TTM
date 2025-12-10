@@ -65,7 +65,7 @@ module softmax_4x4_rowwise (
     .Done  (sm_done)
   );
 
-  always @(posedge clk or negedge rst) begin
+  always @(posedge clk or posedge rst) begin
     if (rst) begin
       state    <= S_IDLE;
       row      <= 2'd0;
