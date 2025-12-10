@@ -241,7 +241,6 @@ module attn_top_4x4_128_mha4 #(
       done   <= 1'b0;
 
       score_start_pulse <= 1'b0;
-      scale_start <= 1'b0;
       gemm_start  <= 1'b0;
 
       // default: no new softmax start unless asserted in state
@@ -307,7 +306,8 @@ module attn_top_4x4_128_mha4 #(
         end
 
         T_SCALE_WAIT: begin
-          if (scale_done) begin
+	  scale_start <= 1'b1;	
+	  if (scale_done) begin
             tstate <= T_SM_START;
           end
         end

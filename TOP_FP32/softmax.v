@@ -139,7 +139,7 @@ module softmax(
 
       NextState <= `IDLE;
     end else begin
-      Done <= 1'b0; // 1-cycle pulse
+      //Done <= 1'b0; // 1-cycle pulse
 
       case (NextState)
         `IDLE: begin

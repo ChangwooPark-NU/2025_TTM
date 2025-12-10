@@ -1,0 +1,148 @@
+xrun(64): 18.09-s011: (c) Copyright 1995-2019 Cadence Design Systems, Inc.
+TOOL:	xrun(64)	18.09-s011: Started on Dec 10, 2025 at 08:07:06 CST
+xrun
+	-64bit
+	-sv
+	-access +r
+	-top attn_top_4x4_128_tb
+	-l xrun.log
+	-notimingchecks
+	+no_tchk_msg
+	attn_top_4x4_128.sv
+	attn_top_4x4_128_tb.sv
+	sram128x128_vproj.sv
+	score.v
+	softmax_4x4.v
+	softmax.v
+	exponential.v
+	divider.v
+	gemm_4x4_4x32_mha4.sv
+	gemm_4x4_4x32_stream.sv
+	multiplier.v
+	adder.v
+	v_proj_mem_tt0p9v25c.v
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xmvlog: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xmvlog: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xmvlog: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+file: attn_top_4x4_128.sv
+	module worklib.attn_top_4x4_128_mha4:sv
+		errors: 0, warnings: 0
+file: attn_top_4x4_128_tb.sv
+	module worklib.attn_top_4x4_128_mha4_tb:sv
+		errors: 0, warnings: 0
+file: sram128x128_vproj.sv
+	module worklib.sram128x128_vproj:sv
+		errors: 0, warnings: 0
+file: score.v
+	module worklib.score_calculation_4x128_regfile_mha4:v
+		errors: 0, warnings: 0
+file: softmax_4x4.v
+	module worklib.softmax_4x4_rowwise:v
+		errors: 0, warnings: 0
+file: softmax.v
+	module worklib.softmax:v
+		errors: 0, warnings: 0
+file: exponential.v
+	module worklib.exponential:v
+		errors: 0, warnings: 0
+file: divider.v
+	module worklib.divider:v
+		errors: 0, warnings: 0
+file: gemm_4x4_4x32_mha4.sv
+	module worklib.gemm_4x4_4x128_mha4_stream:sv
+		errors: 0, warnings: 0
+file: gemm_4x4_4x32_stream.sv
+	module worklib.gemm_4x4_4x32_stream:sv
+		errors: 0, warnings: 0
+file: multiplier.v
+	module worklib.multiplier:v
+		errors: 0, warnings: 0
+file: adder.v
+	module worklib.adder:v
+		errors: 0, warnings: 0
+file: v_proj_mem_tt0p9v25c.v
+	module worklib.v_proj_mem:v
+		errors: 0, warnings: 0
+	Total errors/warnings found outside modules and primitives:
+		errors: 0, warnings: 3
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xrun: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+DEFINE analogLib $(compute:THIS_TOOL_INST_ROOT)/tools/dfII//etc/cdslib/artist/analogLib
+|
+xmelab: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,3): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/artist/analogLib' (cds.lib command ignored).
+DEFINE basic $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/basic
+|
+xmelab: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,4): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/basic' (cds.lib command ignored).
+DEFINE sheets $(compute:THIS_TOOL_INST_ROOT)/tools/dfII/etc/cdslib/sheets/US_8ths
+|
+xmelab: *W,DLCPTH (/vol/eecs391/GPDK045/gpdk045_v_6_0/cds.lib,5): cds.lib Invalid path '/vol/cadence2018/XCELIUM1809/tools/dfII/etc/cdslib/sheets/US_8ths' (cds.lib command ignored).
+xmelab: *E,NOUNIT: Unable to find a unit named 'attn_top_4x4_128_tb' in the libraries.
+xrun: *E,ELBERR: Error during elaboration (status 1), exiting.
+TOOL:	xrun(64)	18.09-s011: Exiting on Dec 10, 2025 at 08:07:07 CST  (total: 00:00:01)

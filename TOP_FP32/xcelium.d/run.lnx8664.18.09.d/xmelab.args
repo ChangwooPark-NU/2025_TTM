@@ -1,0 +1,22 @@
+//
+// File created by:  xrun
+// Do not modify this file
+//
++no_tchk_msg
+-ACCESS
++r
+-NOTIMINGCHECKS
+-NO_TCHK_MSG
+-MESSAGES
+attn_top_4x4_128_tb
+-XLMODE
+./xcelium.d/run.lnx8664.18.09.d
+-RUNMODE
+-CDSLIB
+./xcelium.d/run.lnx8664.18.09.d/cds.lib
+-HDLVAR
+./xcelium.d/run.lnx8664.18.09.d/hdl.var
+-WORK
+worklib
+-IRUNHASTOP
+-HASXLMODE

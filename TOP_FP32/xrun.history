@@ -1,0 +1,1 @@
+s1(10Dec2025:08:07:06):  xrun -64bit -sv -access +r -top attn_top_4x4_128_tb -l xrun.log -notimingchecks +no_tchk_msg attn_top_4x4_128.sv attn_top_4x4_128_tb.sv sram128x128_vproj.sv score.v softmax_4x4.v softmax.v exponential.v divider.v gemm_4x4_4x32_mha4.sv gemm_4x4_4x32_stream.sv multiplier.v adder.v v_proj_mem_tt0p9v25c.v 

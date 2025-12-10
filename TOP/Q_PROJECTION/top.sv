@@ -38,7 +38,8 @@ module top (
 	output logic valid_v,
 	output logic [127:0] INPUT_MEM_DOUT_v, 	
 	output logic [127:0] OUTPUT_MEM_DOUT_v,
-	output logic [127:0] Wv_MEM_DOUT 
+	output logic [127:0] Wv_MEM_DOUT,
+       	output logic [127:0] fp_out	
 	
 ); 
 	// Define signals 
@@ -148,7 +149,6 @@ module top (
 	logic fp_valid;
 	logic [1:0] fp_row; 
 	logic [4:0] fp_group; 
-	logic [127:0] fp_out; 
 	logic fp_done; 
 
 	attn_top_4x4_128_mha4 #(.READ_LAT(2)) fp ( 
@@ -193,7 +193,7 @@ module top (
 	
 	q_proj_mem OUTPUT_MEM (
 		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(!finished ? (fin ? fin_output_wen : OUTPUT_MEM_WEN_q) : 1'b1),
-		.CEBM(1'b0), .WEBM(1'b0), .A(!finished ? (fin ? fin_output_addr : OUTPUT_MEM_ADDR_q):  fp_q_addr), .D(OUTPUT_MEM_DIN_q), .BWEB(128'd0),
+		.CEBM(1'b0), .WEBM(1'b0), .A(fin ? fin_output_addr : (!finished ? OUTPUT_MEM_ADDR_q : fp_q_addr)), .D(OUTPUT_MEM_DIN_q), .BWEB(128'd0),
 		.AM(5'd0), .DM(128'b0), .BWEBM(128'b0), .BIST(1'b0), .RTSEL(2'b0), .WTSEL(2'b0),
 		.Q(OUTPUT_MEM_DOUT_q)
 	);
@@ -214,7 +214,7 @@ module top (
 	
 	q_proj_mem OUTPUT_MEM_k (
 		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(!finished ? (fin ? fin_output_wen : OUTPUT_MEM_WEN_k) : 1'b1),
-		.CEBM(1'b0), .WEBM(1'b0), .A(!finished ? (fin ? fin_output_addr : OUTPUT_MEM_ADDR_k) : fp_k_addr), .D(OUTPUT_MEM_DIN_k), .BWEB(128'd0),
+		.CEBM(1'b0), .WEBM(1'b0), .A(fin ? fin_output_addr : (!finished ?  OUTPUT_MEM_ADDR_k : fp_k_addr)), .D(OUTPUT_MEM_DIN_k), .BWEB(128'd0),
 		.AM(5'd0), .DM(128'b0), .BWEBM(128'b0), .BIST(1'b0), .RTSEL(2'b0), .WTSEL(2'b0),
 		.Q(OUTPUT_MEM_DOUT_k)
 	);
@@ -235,7 +235,7 @@ module top (
 	
 	q_proj_mem OUTPUT_MEM_v (
 		.SLP(1'b0), .SD(1'b0), .CLK(clk), .CEB(1'b0), .WEB(!finished ? (fin ? fin_output_wen : OUTPUT_MEM_WEN_v) : 1'b1),
-		.CEBM(1'b0), .WEBM(1'b0), .A(!finished ? (fin ? fin_output_addr : OUTPUT_MEM_ADDR_v) :  fp_v_addr), .D(OUTPUT_MEM_DIN_v), .BWEB(128'd0),
+		.CEBM(1'b0), .WEBM(1'b0), .A(fin ? fin_output_addr : (!finished ? OUTPUT_MEM_ADDR_v : fp_v_addr)), .D(OUTPUT_MEM_DIN_v), .BWEB(128'd0),
 		.AM(5'd0), .DM(128'b0), .BWEBM(128'b0), .BIST(1'b0), .RTSEL(2'b0), .WTSEL(2'b0),
 		.Q(OUTPUT_MEM_DOUT_v)
 	);

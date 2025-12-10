@@ -1,0 +1,31 @@
+//
+// File created by:  xrun
+// Do not modify this file
+//
+-XLMODE
+./xcelium.d/run.lnx8664.18.09.d
+-RUNMODE
+-sv
+attn_top_4x4_128.sv
+attn_top_4x4_128_tb.sv
+sram128x128_vproj.sv
+score.v
+softmax_4x4.v
+softmax.v
+exponential.v
+divider.v
+gemm_4x4_4x32_mha4.sv
+gemm_4x4_4x32_stream.sv
+multiplier.v
+adder.v
+v_proj_mem_tt0p9v25c.v
+-CDSLIB
+./xcelium.d/run.lnx8664.18.09.d/cdsrun.lib
+-HDLVAR
+./xcelium.d/run.lnx8664.18.09.d/hdlrun.var
+-MESSAGES
+-UPDATE
+-XLLIBSTORE
+./xcelium.d/run.lnx8664.18.09.d/xllibs
+-ALLOWUNBOUND
+-hastop

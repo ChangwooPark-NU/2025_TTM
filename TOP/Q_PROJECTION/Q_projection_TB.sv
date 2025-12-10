@@ -80,7 +80,8 @@ module q_projection_tb();
 		.Wv_MEM_DIN(Wv_MEM_DIN),	
 		.INPUT_MEM_DOUT_v(INPUT_MEM_DOUT_v), 
 		.OUTPUT_MEM_DOUT_v(OUTPUT_MEM_DOUT_v), 
-		.Wv_MEM_DOUT(Wv_MEM_DOUT)	
+		.Wv_MEM_DOUT(Wv_MEM_DOUT),	
+		.fp_out(fp_out)
 	); 
 	
 	// ======================= SRAM INIT ==========================
@@ -373,6 +374,8 @@ module q_projection_tb();
 	    logic [511:0] prev;   
 	    integer my_f;
 	    integer my_t;
+	    integer my_o; 
+	    logic [127:0] prev_fp; 
 	    initial begin
 		    int tile, c0;
 		    int tr, tc;
@@ -382,7 +385,8 @@ module q_projection_tb();
 		    assert(my_f); 
 		    my_t = $fopen("t_out.txt", "w"); 
 		    assert(my_t); 
-		    
+		    my_o = $fopen("fout.txt", "w"); 
+		    assert(my_o);
 		    // init
 		    init_input_addr = '0;
 		    INPUT_MEM_DIN_q  = '0;
@@ -426,11 +430,15 @@ module q_projection_tb();
 		    en = 1;
 		    #10
 		    en = 0;  
-		    for (int i = 0; i < 2000000; i++) begin 	
+		    for (int i = 0; i < 200000; i++) begin 	
 			#10
 			if (out_v !== prev) begin 
 				$fwrite(my_t,"%x\n", out_v); 
 				prev = out_v;
+			end
+			if (fp_out != prev_fp) begin 
+				$fwrite(my_o,"%x\n", fp_out); 
+				prev_fp = fp_out;
 			end	
 			if (valid_v) begin 
 				for (int j = 0; j < 16; j++) begin 
