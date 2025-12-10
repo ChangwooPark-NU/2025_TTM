@@ -82,7 +82,7 @@ module exponential (
   localparam integer LAT = 140;   
   integer count;
 
-  always @(posedge Clock or negedge Reset) begin
+  always @(posedge Clock or posedge Reset) begin
     if (Reset) begin
       T0      <= 32'h00000000;
       DataOut <= 32'h00000000;
