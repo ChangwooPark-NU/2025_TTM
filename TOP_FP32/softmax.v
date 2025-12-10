@@ -30,8 +30,8 @@ module softmax(
   reg  [`DATALENGTH-1:0] InputBuffer [0:LAST];
   reg  [`DATALENGTH-1:0] DivBuffer   [0:LAST];
 
-  wire [`DATALENGTH-1:0] InputBuffer_w [0:LAST];
-  wire [`DATALENGTH-1:0] OutputBuffer_w[0:LAST];
+  logic [`DATALENGTH-1:0] InputBuffer_w [0:LAST];
+  logic [`DATALENGTH-1:0] OutputBuffer_w[0:LAST];
 
   reg  [`DATALENGTH-1:0] Acc;
   reg  [`DATALENGTH-1:0] Arg;
@@ -107,7 +107,7 @@ module softmax(
     end
   endgenerate
 
-  always @(posedge Clock or negedge Reset) begin
+  always @(posedge Clock or posedge Reset) begin
     if (Reset) begin
       for (m = 0; m < DEPTH; m = m + 1) begin
         InputBuffer[m] <= 32'h00000000;
