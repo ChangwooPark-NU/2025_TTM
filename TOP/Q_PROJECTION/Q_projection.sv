@@ -2,7 +2,8 @@
 
 `timescale 1ns/1ps
 
-module QKV_Projection( 
+module QKV_Projection #(parameter B = 1) 
+( 
 	input logic clk,
 	input logic rst, 
 	input logic en,
@@ -136,15 +137,36 @@ module QKV_Projection(
 	end
 
 	// Register File to store biases 
-	regfile rf ( 
-		.clk(clk), 
-		.a1(a1), 
-		.a2(a2), 
-		.a3(a3),
-		.a4(a4),
-		.bias(bias)
-	);
-
+	if (B == 1) begin 
+		regfile1 rf ( 
+			.clk(clk), 
+			.a1(a1), 
+			.a2(a2), 
+			.a3(a3),
+			.a4(a4),
+			.bias(bias)
+		);
+	end
+	else if (B == 2) begin 
+		regfile2 rf ( 
+			.clk(clk), 
+			.a1(a1), 
+			.a2(a2), 
+			.a3(a3),
+			.a4(a4),
+			.bias(bias)
+		);
+	end
+	else begin 
+		regfile3 rf ( 
+			.clk(clk), 
+			.a1(a1), 
+			.a2(a2), 
+			.a3(a3),
+			.a4(a4),
+			.bias(bias)
+		);
+	end
 	// Define FSM states 
 	typedef enum logic [3:0] { 
 		IDLE, 

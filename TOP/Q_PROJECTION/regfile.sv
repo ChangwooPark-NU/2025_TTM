@@ -1,6 +1,6 @@
 `timescale 1ns/1ps 
 
-module regfile ( 
+module regfile1 ( 
 	input logic clk, 
 	input logic [6:0] a1, a2, a3, a4,
 	output logic [127:0] bias

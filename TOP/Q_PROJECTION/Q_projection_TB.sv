@@ -16,34 +16,30 @@ module q_projection_tb();
 	logic fin; 
 	logic [6:0] fin_output_addr; 
 	logic fin_output_wen; 
-	logic [127:0] INPUT_MEM_DIN_q;
+	logic [127:0] INPUT_MEM_DIN;
 	logic [127:0] OUTPUT_MEM_DIN_q;
 	logic [127:0] Wq_MEM_DIN;
-	logic [127:0] INPUT_MEM_DIN_k;
 	logic [127:0] OUTPUT_MEM_DIN_k;
 	logic [127:0] Wk_MEM_DIN;
-	logic [127:0] INPUT_MEM_DIN_v;
 	logic [127:0] OUTPUT_MEM_DIN_v;
 	logic [127:0] Wv_MEM_DIN;
 	// tb 
 	logic [511:0] out_q; 
 	logic valid_q; 	
-	logic [127:0] INPUT_MEM_DOUT_q;
+	logic [127:0] INPUT_MEM_DOUT;
 	logic [127:0] OUTPUT_MEM_DOUT_q;
 	logic [127:0] Wq_MEM_DOUT;
 
 	logic [511:0] out_k; 
 	logic valid_k; 	
-	logic [127:0] INPUT_MEM_DOUT_k;
 	logic [127:0] OUTPUT_MEM_DOUT_k;
 	logic [127:0] Wk_MEM_DOUT;
 	
 	logic [511:0] out_v; 
 	logic valid_v; 	
-	logic [127:0] INPUT_MEM_DOUT_v;
 	logic [127:0] OUTPUT_MEM_DOUT_v;
 	logic [127:0] Wv_MEM_DOUT;
-	
+	logic [127:0] fp_out; 	
 	// Instantiate DUT 
 	top dut (
 		.clk(clk), 
@@ -63,22 +59,18 @@ module q_projection_tb();
 		.fin(fin), 
 	        .fin_output_addr(fin_output_addr), 
 		.fin_output_wen(fin_output_wen),
-		.INPUT_MEM_DIN_q(INPUT_MEM_DIN_q), 
+		.INPUT_MEM_DIN(INPUT_MEM_DIN), 
 		.OUTPUT_MEM_DIN_q(OUTPUT_MEM_DIN_q), 
 		.Wq_MEM_DIN(Wq_MEM_DIN),	
-		.INPUT_MEM_DOUT_q(INPUT_MEM_DOUT_q), 
+		.INPUT_MEM_DOUT(INPUT_MEM_DOUT), 
 		.OUTPUT_MEM_DOUT_q(OUTPUT_MEM_DOUT_q), 
 		.Wq_MEM_DOUT(Wq_MEM_DOUT),	
-		.INPUT_MEM_DIN_k(INPUT_MEM_DIN_k), 
 		.OUTPUT_MEM_DIN_k(OUTPUT_MEM_DIN_k), 
 		.Wk_MEM_DIN(Wk_MEM_DIN),	
-		.INPUT_MEM_DOUT_k(INPUT_MEM_DOUT_k), 
 		.OUTPUT_MEM_DOUT_k(OUTPUT_MEM_DOUT_k), 
 		.Wk_MEM_DOUT(Wk_MEM_DOUT),		
-		.INPUT_MEM_DIN_v(INPUT_MEM_DIN_v), 
 		.OUTPUT_MEM_DIN_v(OUTPUT_MEM_DIN_v), 
 		.Wv_MEM_DIN(Wv_MEM_DIN),	
-		.INPUT_MEM_DOUT_v(INPUT_MEM_DOUT_v), 
 		.OUTPUT_MEM_DOUT_v(OUTPUT_MEM_DOUT_v), 
 		.Wv_MEM_DOUT(Wv_MEM_DOUT),	
 		.fp_out(fp_out)
@@ -108,9 +100,18 @@ module q_projection_tb();
 	endclass	
   
 	random_matrices obj;
+	logic signed [DATA_WIDTH-1:0] matrix_in [N-1:0][M-1:0]; 
+	logic signed [DATA_WIDTH-1:0] matrix_q [M-1:0][M-1:0]; 
+	logic signed [DATA_WIDTH-1:0] matrix_k [M-1:0][M-1:0]; 
+	logic signed [DATA_WIDTH-1:0] matrix_v [M-1:0][M-1:0];
 
-
-	// Pack 4x4 tile from rows 0..3 and cols c0..c0+3 into 128b
+	initial begin 
+		$readmemh("input_q_int8_B1T4C128.hex", matrix_in); 
+		$readmemh("Wq_weight_int8.hex", matrix_q);
+		$readmemh("Wk_weight_int8.hex", matrix_k);
+		$readmemh("Wv_weight_int8.hex", matrix_v); 
+	end	
+		// Pack 4x4 tile from rows 0..3 and cols c0..c0+3 into 128b
 	  function automatic logic [127:0] pack_tile_4x4_1(input int c0);
 	    logic [127:0] w_1;
 	    int r, c, idx;
@@ -121,7 +122,7 @@ module q_projection_tb();
 	      // din[127:120]=A[3][c0+3] ... din[7:0]=A[0][c0+0]
 	      for (r = 3; r >= 0; r--) begin
 		for (c = 3; c >= 0; c--) begin
-		  w_1[127 - 8*idx -: 8] = obj.matrix_a[r][c0 + c];
+		  w_1[127 - 8*idx -: 8] = matrix_in[r][c0 + c];
 		  idx++;
 		end
 	      end
@@ -129,8 +130,8 @@ module q_projection_tb();
 	    end
 	  endfunction
 
-	    // Pack B 4x4 tile at tile-row tr (0..31), tile-col tc (0..31) into 128b
-	    function automatic logic [127:0] pack_b_tile_4x4(input int tr, input int tc);
+		// Pack B 4x4 tile at tile-row tr (0..31), tile-col tc (0..31) into 128b
+	    function automatic logic [127:0] pack_q_tile_4x4(input int tr, input int tc);
 	    logic [127:0] w_2;
 	    int r, c, idx;
 	    int r0, c0;
@@ -143,22 +144,63 @@ module q_projection_tb();
 		// din[127:120]=B[r0+3][c0+3] ... din[7:0]=B[r0+0][c0+0]
 		for (r = 3; r >= 0; r--) begin
 		for (c = 3; c >= 0; c--) begin
-		    w_2[127 - 8*idx -: 8] = obj.matrix_b[r0 + r][c0 + c];
+		    w_2[127 - 8*idx -: 8] =matrix_q[r0 + r][c0 + c];
 		    idx++;
 		end
 		end
 		return w_2;
 	    end
 	    endfunction
-	  
-	  // Write: setup before posedge, latch on posedge
-	  task automatic sram_write(input logic [4:0] addr, input logic [127:0] data);
+
+
+	// Pack B 4x4 tile at tile-row tr (0..31), tile-col tc (0..31) into 128b
+	    function automatic logic [127:0] pack_k_tile_4x4(input int tr, input int tc);
+	    logic [127:0] w_2;
+	    int r, c, idx;
+	    int r0, c0;
+	    begin
+		w_2   = '0;
+		idx = 0;
+		r0  = tr * 4;
+		c0  = tc * 4;
+
+		// din[127:120]=B[r0+3][c0+3] ... din[7:0]=B[r0+0][c0+0]
+		for (r = 3; r >= 0; r--) begin
+		for (c = 3; c >= 0; c--) begin
+		    w_2[127 - 8*idx -: 8] =matrix_k[r0 + r][c0 + c];
+		    idx++;
+		end
+		end
+		return w_2;
+	    end
+	    endfunction
+	 
+	 // Pack B 4x4 tile at tile-row tr (0..31), tile-col tc (0..31) into 128b
+	    function automatic logic [127:0] pack_v_tile_4x4(input int tr, input int tc);
+	    logic [127:0] w_2;
+	    int r, c, idx;
+	    int r0, c0;
+	    begin
+		w_2   = '0;
+		idx = 0;
+		r0  = tr * 4;
+		c0  = tc * 4;
+
+		// din[127:120]=B[r0+3][c0+3] ... din[7:0]=B[r0+0][c0+0]
+		for (r = 3; r >= 0; r--) begin
+		for (c = 3; c >= 0; c--) begin
+		    w_2[127 - 8*idx -: 8] =matrix_v[r0 + r][c0 + c];
+		    idx++;
+		end
+		end
+		return w_2;
+	    end
+	    endfunction  
+	   task automatic sram_write(input logic [4:0] addr, input logic [127:0] data);
 	    begin
 	      @(negedge clk);
 	      init_input_addr <= addr;
-	      INPUT_MEM_DIN_q  <= data;
-	      INPUT_MEM_DIN_k  <= data;
-	      INPUT_MEM_DIN_v  <= data;
+	      INPUT_MEM_DIN  <= data;
 
 	      init_input_wen  <= WEB_WRITE;
 
@@ -166,9 +208,7 @@ module q_projection_tb();
 
 	      @(negedge clk);
 	      init_input_wen  <= WEB_READ;
-	      INPUT_MEM_DIN_q  <= '0;
-	      INPUT_MEM_DIN_k  <= '0;
-   	      INPUT_MEM_DIN_v  <= '0;
+	      INPUT_MEM_DIN  <= '0;
  
       	    end
 	  endtask
@@ -182,7 +222,7 @@ module q_projection_tb();
 	      // read latency? ????? ??? 2cycle ??
 	      @(posedge clk);
 	      @(posedge clk);
-	      data = INPUT_MEM_DOUT_v;
+	      data = INPUT_MEM_DOUT;
 	    end
 	  endtask
 
@@ -199,13 +239,13 @@ module q_projection_tb();
 	    end
 	  endtask
 
-	    task automatic wq_write(input logic [9:0] addr, input logic [127:0] data);
+	    task automatic wq_write(input logic [9:0] addr, input logic [127:0] data_q, input logic [127:0] data_k, input logic [127:0] data_v);
 	    begin
 		@(negedge clk);
 		init_w_addr <= addr;
-		Wq_MEM_DIN  <= data;
-		Wk_MEM_DIN  <= data;
-		Wv_MEM_DIN  <= data;
+		Wq_MEM_DIN  <= data_q;
+		Wk_MEM_DIN  <= data_k;
+		Wv_MEM_DIN  <= data_v;
 		init_w_wen  <= WEB_WRITE;
 
 		@(posedge clk); // write latch
@@ -389,7 +429,7 @@ module q_projection_tb();
 		    assert(my_o);
 		    // init
 		    init_input_addr = '0;
-		    INPUT_MEM_DIN_q  = '0;
+		    INPUT_MEM_DIN  = '0;
 		    init_input_wen  = WEB_READ;
 		    init_w_addr = '0;
 		    Wq_MEM_DIN  = '0;
@@ -415,7 +455,7 @@ module q_projection_tb();
 			for (int tc = 0; tc < (M/4); tc++) begin
 			    int addr;
 			    addr = tr*32 + tc;
-			    wq_write(addr[9:0], pack_b_tile_4x4(tr, tc));
+			    wq_write(addr[9:0], pack_q_tile_4x4(tr, tc), pack_k_tile_4x4(tr, tc), pack_v_tile_4x4(tr, tc));
 			end
 		    end
 			
@@ -436,7 +476,7 @@ module q_projection_tb();
 				$fwrite(my_t,"%x\n", out_v); 
 				prev = out_v;
 			end
-			if (fp_out != prev_fp) begin 
+			if (fp_out !== prev_fp) begin 
 				$fwrite(my_o,"%x\n", fp_out); 
 				prev_fp = fp_out;
 			end	

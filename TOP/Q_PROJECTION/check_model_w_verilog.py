@@ -86,6 +86,14 @@ W = Wq.astype(np.int32)
 # 1) Compute matrix multiply: 4x128 @ 128x128 -> 4x128
 OUT = Q @ W + bias   # shape (4, 128), dtype int32
 
+gold = np.load("V_out_int32_B1T4C128.npy")
+
+if gold.shape != OUT.shape:
+    gold = gold.reshape(OUT.shape)
+
+diff = OUT.astype(np.int64) - gold.astype(np.int64)
+print("max |diff| =", np.max(np.abs(diff)))
+
 # 2) Tile OUT into 32 tiles of shape 4x4 (along columns)
 tiles = []
 num_tiles = 32
