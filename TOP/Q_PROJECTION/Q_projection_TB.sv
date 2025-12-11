@@ -40,6 +40,12 @@ module q_projection_tb();
 	logic [127:0] OUTPUT_MEM_DOUT_v;
 	logic [127:0] Wv_MEM_DOUT;
 	logic [127:0] fp_out; 	
+	
+	logic [31:0] sm_y0 [0:3]; 
+	logic [31:0] sm_y1 [0:3]; 
+	logic [31:0] sm_y2 [0:3]; 
+	logic [31:0] sm_y3 [0:3]; 
+
 	// Instantiate DUT 
 	top dut (
 		.clk(clk), 
@@ -73,7 +79,11 @@ module q_projection_tb();
 		.Wv_MEM_DIN(Wv_MEM_DIN),	
 		.OUTPUT_MEM_DOUT_v(OUTPUT_MEM_DOUT_v), 
 		.Wv_MEM_DOUT(Wv_MEM_DOUT),	
-		.fp_out(fp_out)
+		.fp_out(fp_out),
+		.sm_y0(sm_y0),
+		.sm_y1(sm_y1),
+		.sm_y2(sm_y2),
+		.sm_y3(sm_y3)
 	); 
 	
 	// ======================= SRAM INIT ==========================
@@ -513,6 +523,7 @@ endfunction
 	    integer my_f;
 	    integer my_t;
 	    integer my_o; 
+	    integer my_d; 
 	    logic [127:0] prev_fp; 
 	    initial begin
 		    int tile, c0;
@@ -525,6 +536,8 @@ endfunction
 		    assert(my_t); 
 		    my_o = $fopen("fout.txt", "w"); 
 		    assert(my_o);
+		    my_d = $fopen("yout.txt", "w"); 
+		    assert(my_d); 
 		    // init
 		    init_input_addr = '0;
 		    INPUT_MEM_DIN  = '0;
@@ -588,7 +601,9 @@ endfunction
 		    end 	
 		
 		    $display("DONE: Wrote RTL result into q_out.txt");
-		    
+		    for (int i = 0; i < 4; i++) begin 
+			$fwrite(my_d, "%x\n%x\n%x\n%x\n", sm_y0[i], sm_y1[i], sm_y2[i], sm_y3[i]); 
+		    end 
 		    fin = 1; 
 		    dump_output_rows_to_csv("output.csv"); 
 		    $finish;   

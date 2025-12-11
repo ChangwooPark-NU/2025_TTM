@@ -35,8 +35,11 @@ module top (
 	output logic valid_v,
 	output logic [127:0] OUTPUT_MEM_DOUT_v,
 	output logic [127:0] Wv_MEM_DOUT,
-       	output logic [127:0] fp_out	
-	
+       	output logic [127:0] fp_out, 
+	output logic [31:0] sm_y0 [0:3],	
+	output logic [31:0] sm_y1 [0:3],
+	output logic [31:0] sm_y2 [0:3],
+	output logic [31:0] sm_y3 [0:3]	
 ); 
 	// Define signals 
         logic Wq_MEM_WEN;
@@ -168,7 +171,11 @@ module top (
 	  .out_group(fp_group),       // 0..31
 	  .out_data(fp_out),
 
-	  .done(fp_done)
+	  .done(fp_done),
+	  .sm_y0(sm_y0), 
+	  .sm_y1(sm_y1),
+	  .sm_y2(sm_y2),
+	  .sm_y3(sm_y3) 
 	);
 		
 
