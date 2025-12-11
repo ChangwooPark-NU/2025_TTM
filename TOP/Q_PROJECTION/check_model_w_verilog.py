@@ -8,20 +8,24 @@ def load_biases(path):
     vals = []
     with open(path) as f:
         for line in f:
-            print(line)
+            #print(line)
             s = line.strip()
             if not s:
                 continue
             # parse hex, wrap to signed int32
             v = int(s, 16)
             v = np.int32(v)
-            print(v)
+            #print(v)
             vals.append(v)
     bias = np.array(vals, dtype=np.int32)
     assert bias.shape == (128,), f"Expected 128 bias values, got {bias.shape}"
     return bias
 
 bias = load_biases("Wq_bias_int32.hex")
+
+bias_k = load_biases("Wk_bias_int32.hex")
+
+bias_v = load_biases("Wv_bias_int32.hex")
 
 csv_path = "sram_dump_rows0_31.csv"
 
@@ -86,14 +90,91 @@ Q = full_matrix.astype(np.int32)
 W = Wq.astype(np.int32)
 # 1) Compute matrix multiply: 4x128 @ 128x128 -> 4x128
 OUT = Q @ W + bias   # shape (4, 128), dtype int32
-gold = np.load("Q_out_int32_B1T4C128.npy")
-print(OUT)
-print(gold)
+gold_q = np.load("Q_out_int32_B1T4C128.npy")
+gold_k = np.load("K_out_int32_B1T4C128.npy")
+#print(OUT)
+#print(gold)
+gold_q = gold_q.reshape(4,128)
+gold_k = gold_k.reshape(4,128)
 
-if gold.shape != OUT.shape:
-    gold = gold.reshape(OUT.shape)
+# ---- Multi-head slicing ----
+# We split the 128-dimensional vector into 4 heads → each head gets 32 dims
+# Head h uses dims [h*32 : (h+1)*32]
 
-diff = OUT.astype(np.int64) - gold.astype(np.int64)
+HEADS = 4
+D_PER_HEAD = 32
+
+# Output: scores[h][q_row][k_row] = scalar
+scores = np.zeros((HEADS, 4, 4), dtype=np.float32)
+h = 0 
+
+
+def f32_to_hex(x):
+    """Convert float32 → 8-char big-endian IEEE754 hex."""
+    return ''.join(f"{b:02x}" for b in struct.pack(">f", float(x)))
+
+# Load your tensors
+# gold_q  : shape (4,128) int16 or int32 values representing q14
+# gold_k  : shape (4,128)
+# scores_m: fp32 reference
+
+scale_q14 = 1.0 / (2**14)
+h = 0
+print("\n==========================")
+print(f"========= HEAD {h} =========")
+print("==========================\n")
+
+d0 = h * D_PER_HEAD
+d1 = (h + 1) * D_PER_HEAD
+
+# ---- Slice per-head matrices ----
+Qh = gold_q[:, d0:d1].astype(np.float32) * scale_q14   # (4×32)
+Kh = gold_k[:, d0:d1].astype(np.float32) * scale_q14   # (4×32)
+
+# ---- Compute score ----
+score = Qh @ Kh.T                         # (4×4)
+scaled = score / np.sqrt(32.0)
+
+# ---------------------------
+# PRINT Qh / Kh (decimal + hex)
+# ---------------------------
+print("Qh (decimal):")
+print(Qh)
+
+print("\nQh (hex fp32):")
+Qh_hex = np.vectorize(f32_to_hex)(Qh)
+for row in Qh_hex:
+    print(" ".join(row))
+
+print("\nKh (decimal):")
+print(Kh)
+
+print("\nKh (hex fp32):")
+Kh_hex = np.vectorize(f32_to_hex)(Kh)
+for row in Kh_hex:
+    print(" ".join(row))
+
+# ---------------------------
+# PRINT SCORE
+# ---------------------------
+print("\nScore (decimal, unscaled):")
+print(score)
+
+print("\nScore (decimal, scaled = score / sqrt(32)):")
+print(scaled)
+
+print("\nScore (hex fp32, unscaled):")
+score_hex = np.vectorize(f32_to_hex)(score)
+for row in score_hex:
+    print(" ".join(row))
+
+print("\nScore (hex fp32, scaled):")
+scaled_hex = np.vectorize(f32_to_hex)(scaled)
+for row in scaled_hex:
+    print(" ".join(row))
+
+
+diff = OUT.astype(np.int64) - gold_q.astype(np.int64)
 print("max |diff| =", np.max(np.abs(diff)))
 
 # 2) Tile OUT into 32 tiles of shape 4x4 (along columns)
@@ -118,7 +199,7 @@ with open(out_path, "w") as f:
         line = "".join(f"{v:11d}" for v in flat)
         f.write(line + "\n")
 
-print("DONE: Wrote golden reference result to golden_out_tiles.txt")
+#print("DONE: Wrote golden reference result to golden_out_tiles.txt")
 
 
 # frac_out from your quantized layer (Q14)
@@ -135,7 +216,7 @@ with open(out_path, "w") as f:
         # format: same spacing as before but with float instead of int
         line = "".join(f"{v:11.7f}\n" for v in flat_fp)
         f.write(line)
-print("DONE: Wrote FP32 golden output to", out_path)
+#print("DONE: Wrote FP32 golden output to", out_path)
 
 csv_path = "output.csv"          # <- your CSV
 out_path = "fp32.txt"   # <- output text file
@@ -260,18 +341,22 @@ def load_int32_hex(path, expected_len=None, shape=None):
 # ---------- 1) Load quantized int8 input (B1T4C128) -> reshape to (4,128) ----------
 x_path = "input_q_int8_B1T4C128.hex"
 X_int8 = load_int8_hex(x_path, expected_len=4 * 128, shape=(4, 128))
-print("X_int8 shape:", X_int8.shape, "min/max:", X_int8.min(), X_int8.max())
+#print("X_int8 shape:", X_int8.shape, "min/max:", X_int8.min(), X_int8.max())
 
 
 # ---------- 2) Load int8 weights (128x128, row-major: [out, in]) ----------
 w_path = "Wq_weight_int8.hex"
 W_int8 = load_int8_hex(w_path, expected_len=128 * 128, shape=(128, 128))
-print("W_int8 shape:", W_int8.shape, "min/max:", W_int8.min(), W_int8.max())
+#print("W_int8 shape:", W_int8.shape, "min/max:", W_int8.min(), W_int8.max())
+wk_path = "Wk_weight_int8.hex"
+Wk_int8 = load_int8_hex(wk_path, expected_len=128 * 128, shape=(128, 128))
 
 # ---------- 3) Load int32 bias (128) ----------
 b_path = "Wq_bias_int32.hex"
 b_int32 = load_int32_hex(b_path, expected_len=128, shape=(128,))
-print("b_int32 shape:", b_int32.shape, "min/max:", b_int32.min(), b_int32.max())
+#print("b_int32 shape:", b_int32.shape, "min/max:", b_int32.min(), b_int32.max())
+bk_path = "Wk_bias_int32.hex"
+bk_int32 = load_int32_hex(b_path, expected_len=128, shape=(128,))
 
 # ---------- 4) Compute Y = X_int8 @ W_int8.T + b_int32 ----------
 X32 = X_int8.astype(np.int32)          # (4,128)
@@ -280,7 +365,7 @@ W32 = W_int8.astype(np.int32)         # (128,128)
 # forward_int does: acc = x32 @ w32.t()
 Y = X32 @ W32.T                       # (4,128)
 Y = Y + b_int32                       # bias broadcast across rows
-print(OUT==Y)
+#print(OUT==Y)
 WT = W32.T.astype(np.int8, copy=False)   # shape (128, 128)
 
 # Flatten row-major so WT[row, col] maps to Verilog matrix_q[row][col]
@@ -290,9 +375,10 @@ with open("Q_weights.hex", "w") as f:
     for v in flat:
         f.write(f"{int(v) & 0xFF:02X}\n")   # one byte per line, 2 hex chars
 
-print("Wrote V_weights.hex for W32.T (1 byte per line)")
-print(OUT)
-print(Y)
+#print("VERILOG")
+#print(OUT)
+#print("Q")
+#print(Y)
 
 # ---- read back and verify ----
 vals = []
@@ -308,6 +394,6 @@ assert vt_flat_u8.size == WT.size
 
 Vt = vt_flat_u8.view(np.int8).reshape(WT.shape)
 
-print("Vt == W32.T ?", np.array_equal(Vt, W))
-print(Vt)
-print(W)
+#print("Vt == W32.T ?", np.array_equal(Vt, W))
+#print(Vt)
+#print(W)

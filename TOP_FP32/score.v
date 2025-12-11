@@ -20,7 +20,7 @@ module score_calculation_4x128_regfile_mha4 (
   output reg busy,
   output reg done
 );
-
+   logic [4:0] x; 
   // constants
   localparam [6:0] Q_BASE = 7'd0;
   localparam [6:0] K_BASE = 7'd0;
@@ -54,7 +54,7 @@ module score_calculation_4x128_regfile_mha4 (
   reg [31:0] score_reg [0:63];
 
   // linear address: head*16 + ij
-  wire [5:0] sidxH = {head, ij}; // concatenation = head as MSBs + ij
+  wire [5:0] sidxH = x; // concatenation = head as MSBs + ij
 
   // export all scores as flat bus {score[63],...,score[0]}
   assign score_flat_all = {
@@ -80,6 +80,7 @@ module score_calculation_4x128_regfile_mha4 (
   always @(posedge clk or negedge rst) begin
     if (!rst) begin
       score_rd_data <= 32'b0;
+      x <= 0; 
     end else begin
       if (score_rd_en) begin
         score_rd_data <= score_reg[score_rd_addr];
@@ -268,11 +269,12 @@ module score_calculation_4x128_regfile_mha4 (
         end
 
         S_SET_ADDR: begin
-          Q_mem_addr <= Q_BASE + i_off + t_off;
-          K_mem_addr <= K_BASE + j_off + t_off;
+          Q_mem_addr <= Q_BASE + i_idx + t_off;
+          K_mem_addr <= K_BASE + j_idx + t_off;
           wait_cnt <= 0;
           state <= S_WAIT_MEM;
-        end
+ 
+  	end
 
         S_WAIT_MEM: begin
           if (wait_cnt == MEM_WAIT) state <= S_LATCH_MEM;
@@ -364,8 +366,7 @@ module score_calculation_4x128_regfile_mha4 (
           if (aa_out_stb) begin
             // head boundary: store acc_w and reset accumulator for next head
             if (head_last) begin
-              score_reg[sidxH] <= acc_w;
-              acc <= 32'h0000_0000;
+              score_reg[sidxH] <= acc;
             end else begin
               acc <= acc_w;
             end
@@ -374,10 +375,10 @@ module score_calculation_4x128_regfile_mha4 (
         end
 
         S_NEXT_TILE: begin
-          if (t_idx == 5'd31) begin
+          if (t_idx == 28) begin
             state <= S_NEXT_IJ;
           end else begin
-            t_idx <= t_idx + 1'b1;
+            t_idx <= t_idx + 4;
             state <= S_SET_ADDR;
           end
         end
@@ -385,22 +386,22 @@ module score_calculation_4x128_regfile_mha4 (
         S_NEXT_IJ: begin
           // next (i,j), restart t_idx and accumulator (already reset at head_last when t_idx==31)
           t_idx <= 0;
-          acc   <= 32'h0000_0000;
-
-          if (j_idx == 3) begin
-            j_idx <= 0;
-            if (i_idx == 3) begin
+          score_reg[x] <= acc_w;
+	  acc<= 32'h0000_0000;
+	  x <= x + 1; 
+	  
+            if (i_idx == 3 && j_idx == 3) begin
               done <= 1'b1;
               state <= S_IDLE;
               busy <= 1'b0;
             end else begin
-              i_idx <= i_idx + 1;
-              state <= S_SET_ADDR;
+	      if (j_idx == 3) begin 
+		      j_idx <= 0; 
+		      i_idx <= i_idx + 1; 
+	      end 
+	      else j_idx <= j_idx + 1; 
+	      state <= S_SET_ADDR;
             end
-          end else begin
-            j_idx <= j_idx + 1;
-            state <= S_SET_ADDR;
-          end
         end
 
         default: state <= S_IDLE;

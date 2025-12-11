@@ -387,7 +387,7 @@ module score_calculation_4x128_regfile_mha4 (
           t_idx <= 0;
           acc   <= 32'h0000_0000;
 
-          if (j_idx == 3) begin
+          if (j_idx == 31) begin
             j_idx <= 0;
             if (i_idx == 3) begin
               done <= 1'b1;

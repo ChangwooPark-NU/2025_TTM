@@ -12,6 +12,7 @@ attn_top_4x4_128_tb
 xrun.log
 -notimingchecks
 +no_tchk_msg
+-gui
 attn_top_4x4_128.sv
 attn_top_4x4_128_tb.sv
 sram128x128_vproj.sv

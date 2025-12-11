@@ -350,7 +350,7 @@ module attn_top_4x4_128_mha4 #(
 
         T_GEMM_WAIT: begin
           if (gemm_done) begin
-            tstate <= T_NEXT_HEAD;
+            tstate <= T_DONE;
           end
         end
 

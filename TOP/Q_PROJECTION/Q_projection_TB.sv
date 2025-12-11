@@ -568,7 +568,7 @@ endfunction
 		    en = 1;
 		    #10
 		    en = 0;  
-		    for (int i = 0; i < 200000; i++) begin 	
+		    for (int i = 0; i < 80000; i++) begin 	
 			#10
 			if (out_v !== prev) begin 
 				$fwrite(my_t,"%x\n", out_v); 
