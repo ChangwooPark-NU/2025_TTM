@@ -72,7 +72,7 @@ module attn_top_4x4_128_mha4 #(
     .clk(clk),
     .rst(~rst_n),              
     .start(scale_start),
-    .score(score_head_flat),
+    .score(score_flat_all[511:0]),
     .scaled_score(scaled_head_flat),
     .done(scale_done)
   );
