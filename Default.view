@@ -1,0 +1,36 @@
+# Version:1.0 MMMC View Definition File
+# Do Not Remove Above Line
+create_rc_corner -name rc -preRoute_res {1.0} -preRoute_cap {1.0} -preRoute_clkres {1.0} -preRoute_clkcap {1.0} -postRoute_res {1.0} -postRoute_cap {1.0} -postRoute_xcap {1.0} -postRoute_clkres {1.0} -postRoute_clkcap {1.0} -qx_tech_file /vlsi/technology/TSMC/28nm/PDK/qrcTechFile
+#create_op_cond -name op -library_file {/data/technology/TSMC/65nm/65nm_IP_MOSIS/tcbn65gplus/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn65gplus_140b/tcbn65gplustc.lib} -P {10.0} -V {10.0} -T {10.0}
+create_library_set -name lib_typ -timing {
+/vlsi/technology/TSMC/28nm/TSMC_IP/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140tt0p9v25c.lib
+/vlsi/users/cpark/CE_493/Transformer/SRAM/INPUT_SRAM/input_mem/NLDM/input_mem_tt0p9v25c.lib 
+/vlsi/users/cpark/CE_493/Transformer/SRAM/OUTPUT_SRAM/Q_Proj_mem/q_proj_mem/NLDM/q_proj_mem_tt0p9v25c.lib 
+/vlsi/users/cpark/CE_493/Transformer/SRAM/Weight_SRAM/Wq_SRAM/Wq_mem/NLDM/Wq_mem_tt0p9v25c.lib
+}
+
+create_library_set -name lib_max -timing {
+/vlsi/technology/TSMC/28nm/TSMC_IP/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140ffg0p99v125c.lib
+/vlsi/users/cpark/CE_493/Transformer/SRAM/INPUT_SRAM/input_mem/NLDM/input_mem_ffg0p99v125c.lib 
+/vlsi/users/cpark/CE_493/Transformer/SRAM/OUTPUT_SRAM/Q_Proj_mem/q_proj_mem/NLDM/q_proj_mem_ffg0p99v125c.lib
+/vlsi/users/cpark/CE_493/Transformer/SRAM/Weight_SRAM/Wq_SRAM/Wq_mem/NLDM/Wq_mem_ffg0p99v125c.lib
+}
+
+create_library_set -name lib_min -timing {
+/vlsi/technology/TSMC/28nm/TSMC_IP/tcbn28hpcplusbwp30p140_190a/TSMCHOME/digital/Front_End/timing_power_noise/NLDM/tcbn28hpcplusbwp30p140_180a/tcbn28hpcplusbwp30p140ssg0p81v0c.lib
+/vlsi/users/cpark/CE_493/Transformer/SRAM/INPUT_SRAM/input_mem/NLDM/input_mem_ssg0p81v0c.lib
+/vlsi/users/cpark/CE_493/Transformer/SRAM/OUTPUT_SRAM/Q_Proj_mem/q_proj_mem/NLDM/q_proj_mem_ssg0p81v0c.lib
+/vlsi/users/cpark/CE_493/Transformer/SRAM/Weight_SRAM/Wq_SRAM/Wq_mem/NLDM/Wq_mem_ssg0p81v0c.lib
+}
+
+create_constraint_mode -name sdc -sdc_files {/vlsi/users/cpark/CE_493/Transformer/Backend/top.sdc}
+create_delay_corner -name delay -rc_corner {rc} -early_library_set {lib_min} -late_library_set {lib_max}
+create_delay_corner -name delay_typ -rc_corner {rc} -early_library_set {lib_typ} -late_library_set {lib_typ}
+create_delay_corner -name delay_max -rc_corner {rc} -early_library_set {lib_max} -late_library_set {lib_max}
+create_delay_corner -name delay_min -rc_corner {rc} -early_library_set {lib_min} -late_library_set {lib_min}
+
+create_analysis_view -name analysis_typ -constraint_mode {sdc} -delay_corner {delay_typ}
+create_analysis_view -name analysis_max -constraint_mode {sdc} -delay_corner {delay_max}
+create_analysis_view -name analysis_min -constraint_mode {sdc} -delay_corner {delay_min}
+set_analysis_view -setup {analysis_typ} -hold {analysis_min analysis_typ analysis_max}
+
