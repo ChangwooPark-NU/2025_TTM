@@ -23,7 +23,11 @@ module attn_top_4x4_128_mha4 #(
   output logic [4:0]  out_group,       // 0..31
   output logic [127:0] out_data,
 
-  output logic        done
+  output logic        done,
+  output logic [31:0] sm_y0 [0:3],  
+  output logic [31:0] sm_y1 [0:3],
+  output logic [31:0] sm_y2 [0:3],
+  output logic [31:0] sm_y3 [0:3] 
 );
 
   localparam int MEM_WAIT = READ_LAT + 1;
@@ -82,7 +86,6 @@ module attn_top_4x4_128_mha4 #(
 
   logic        sm_start[0:3];
   logic [31:0] sm_datain[0:3];
-  logic [31:0] sm_y0[0:3], sm_y1[0:3], sm_y2[0:3], sm_y3[0:3];
   logic        sm_done[0:3];
 
   genvar r;

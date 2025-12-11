@@ -25,6 +25,8 @@ module softmax(
   localparam integer DEPTH = (1 << `INPUTMAX);
   localparam integer LAST  = DEPTH - 1;
 
+  wire [`INPUTMAX:0] N_eff = (N > LAST) ? LAST[`INPUTMAX:0] : N;
+
   integer m;
 
   reg  [`DATALENGTH-1:0] InputBuffer [0:LAST];
@@ -176,7 +178,7 @@ module softmax(
         end
 
         `INPUTSTREAM: begin
-          if (Counter <= N) begin
+          if (Counter <= N_eff) begin
             InputBuffer[Counter] <= Datain;
             Counter <= Counter + 1;
             NextState <= `INPUTSTREAM;
@@ -188,8 +190,11 @@ module softmax(
 
         `EXP: begin
           if (Ack == {DEPTH{1'b1}}) begin
-            for (m = 0; m <= N; m = m + 1)
-              DivBuffer[m] <= InputBuffer_w[m];
+            for (m = 0; m < DEPTH; m = m + 1) begin
+              if (m <= N_eff)
+                DivBuffer[m] <= InputBuffer_w[m];
+              // else: ????? ?? ?? ? ? (?? ?? ??)
+            end
 
             C         <= 0;
             C_add     <= 0;
@@ -207,10 +212,11 @@ module softmax(
           end
         end
 
+
         `ADD: begin
           Str_Add_z <= 1'b1;
 
-          if (C <= N) begin
+          if (C <= N_eff) begin
             case (C_add)
               0: begin
                 Str_Add_a <= 1'b0;

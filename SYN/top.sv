@@ -14,30 +14,34 @@ module top (
 	input logic fin_output_wen, 
         // tb 
 	input logic [127:0] INPUT_MEM_DIN, 
-	output logic [127:0] OUTPUT_MEM_DIN_q, 
-	input logic [127:0] Wq_MEM_DIN, 
-	output logic [511:0] out_q, 
-	output logic valid_q,
-	output logic [127:0] INPUT_MEM_DOUT, 	
-	output logic [127:0] OUTPUT_MEM_DOUT_q,
-	output logic [127:0] Wq_MEM_DOUT, 
-
-	output logic [127:0] OUTPUT_MEM_DIN_k, 
+	input logic [127:0] Wq_MEM_DIN,  
 	input logic [127:0] Wk_MEM_DIN, 
-	output logic [511:0] out_k, 
-	output logic valid_k,
-	output logic [127:0] OUTPUT_MEM_DOUT_k,
-	output logic [127:0] Wk_MEM_DOUT, 
-
-	output logic [127:0] OUTPUT_MEM_DIN_v, 
 	input logic [127:0] Wv_MEM_DIN, 
-	output logic [511:0] out_v, 
-	output logic valid_v,
-	output logic [127:0] OUTPUT_MEM_DOUT_v,
-	output logic [127:0] Wv_MEM_DOUT,
-       	output logic [127:0] fp_out	
-	
+	output logic [31:0] sm_y0 [0:3],	
+	output logic [31:0] sm_y1 [0:3],
+	output logic [31:0] sm_y2 [0:3],
+	output logic [31:0] sm_y3 [0:3]	
 ); 
+ 
+    logic [127:0] OUTPUT_MEM_DIN_q;
+	logic [511:0] out_q; 
+	logic valid_q;
+	logic [127:0] INPUT_MEM_DOUT; 	
+	logic [127:0] OUTPUT_MEM_DOUT_q;
+	logic [127:0] Wq_MEM_DOUT;
+	logic [127:0] OUTPUT_MEM_DIN_k;
+	logic [511:0] out_k; 
+	logic valid_k;
+	logic [127:0] OUTPUT_MEM_DOUT_k;
+	logic [127:0] Wk_MEM_DOUT;
+	logic [127:0] OUTPUT_MEM_DIN_v; 
+	logic [511:0] out_v; 
+	logic valid_v;
+	logic [127:0] OUTPUT_MEM_DOUT_v;
+	logic [127:0] Wv_MEM_DOUT;
+    logic [127:0] fp_out; 
+
+
 	// Define signals 
         logic Wq_MEM_WEN;
         logic Wq_MEM_CEB;
@@ -168,7 +172,11 @@ module top (
 	  .out_group(fp_group),       // 0..31
 	  .out_data(fp_out),
 
-	  .done(fp_done)
+	  .done(fp_done),
+	  .sm_y0(sm_y0), 
+	  .sm_y1(sm_y1),
+	  .sm_y2(sm_y2),
+	  .sm_y3(sm_y3) 
 	);
 		
 
